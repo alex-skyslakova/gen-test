@@ -1,0 +1,3829 @@
+,task_url,task_name,task_description,language_url,language_name,code,code_length,line_count
+3708,http://rosettacode.org/wiki/100_doors,100 doors,"There are 100 doors in a row that are all initially closed.
+
+You make 100 passes by the doors.
+
+The first time through, visit every door and  toggle  the door  (if the door is closed,  open it;   if it is open,  close it).
+
+The second time, only visit every 2nd door   (door #2, #4, #6, ...),   and toggle it.
+
+The third time, visit every 3rd door   (door #3, #6, #9, ...), etc,   until you only visit the 100th door.
+
+
+
+Task
+
+Answer the question:   what state are the doors in after the last pass?   Which are open, which are closed?
+
+
+Alternate:
+As noted in this page's   discussion page,   the only doors that remain open are those whose numbers are perfect squares.
+
+Opening only those doors is an   optimization   that may also be expressed;
+however, as should be obvious, this defeats the intent of comparing implementations across programming languages.
+
+
+
+",#TypeScript,TypeScript," 
+interface Door {
+  id: number;
+  open: boolean;
+}
+ 
+function doors(): Door[] {
+  var Doors: Door[] = [];
+ 
+  for (let i = 1; i <= 100; i++) {
+    Doors.push({id: i, open: false});
+  }
+ 
+  for (let secuence of Doors) {
+    for (let door of Doors) {
+      if (door.id % secuence.id == 0) {
+        door.open = !door.open;
+      }
+    }
+  }
+ 
+  return Doors.filter(a => a.open);
+}
+ ",381,24
+5027,http://rosettacode.org/wiki/Vigen%C3%A8re_cipher,Vigenère cipher,"Task
+
+Implement a   Vigenère cypher,   both encryption and decryption.
+
+The program should handle keys and text of unequal length,
+and should capitalize everything and discard non-alphabetic characters. 
+
+(If your program handles non-alphabetic characters in another way,
+make a note of it.)
+
+
+
+Related tasks
+
+   Caesar cipher
+   Rot-13
+   Substitution Cipher
+
+",#TypeScript,TypeScript,"class Vigenere {
+ 
+    key: string
+ 
+    /** Create new cipher based on key */
+    constructor(key: string) {
+        this.key = Vigenere.formatText(key)
+    }
+ 
+    /** Enrypt a given text using key */
+    encrypt(plainText: string): string {
+        return Array.prototype.map.call(Vigenere.formatText(plainText), (letter: string, index: number): string => {
+            return String.fromCharCode((letter.charCodeAt(0) + this.key.charCodeAt(index % this.key.length) - 130) % 26 + 65)
+        }).join('')
+    }
+ 
+    /** Decrypt ciphertext based on key */
+    decrypt(cipherText: string): string {
+        return Array.prototype.map.call(Vigenere.formatText(cipherText), (letter: string, index: number): string => {
+            return String.fromCharCode((letter.charCodeAt(0) - this.key.charCodeAt(index % this.key.length) + 26) % 26 + 65)
+        }).join('')
+    }
+ 
+    /** Converts to uppercase and removes non characters */
+    private static formatText(text: string): string {
+        return text.toUpperCase().replace(/[^A-Z]/g, """")
+    }
+ 
+}
+ 
+/** Example usage */
+(() => {
+    let original: string = ""Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.""
+ 
+    console.log(`Original: ${original}`)
+ 
+    let vig: Vigenere = new Vigenere(""vigenere"")
+ 
+    let encoded: string = vig.encrypt(original)
+ 
+    console.log(`After encryption: ${encoded}`)
+ 
+    let back: string = vig.decrypt(encoded)
+ 
+    console.log(`After decryption: ${back}`)
+ 
+})()
+ ",1654,48
+9710,http://rosettacode.org/wiki/Sutherland-Hodgman_polygon_clipping,Sutherland-Hodgman polygon clipping,"The   Sutherland-Hodgman clipping algorithm   finds the polygon that is the intersection between an arbitrary polygon (the “subject polygon”) and a convex polygon (the “clip polygon”).
+
+It is used in computer graphics (especially 2D graphics) to reduce the complexity of a scene being displayed by eliminating parts of a polygon that do not need to be displayed.
+
+
+
+Task
+
+Take the closed polygon defined by the points:
+
+ 
+
+
+
+[
+(
+50
+,
+150
+)
+,
+(
+200
+,
+50
+)
+,
+(
+350
+,
+150
+)
+,
+(
+350
+,
+300
+)
+,
+(
+250
+,
+300
+)
+,
+(
+200
+,
+250
+)
+,
+(
+150
+,
+350
+)
+,
+(
+100
+,
+250
+)
+,
+(
+100
+,
+200
+)
+]
+
+
+{\displaystyle [(50,150),(200,50),(350,150),(350,300),(250,300),(200,250),(150,350),(100,250),(100,200)]}
+
+
+and clip it by the rectangle defined by the points:
+
+ 
+
+
+
+[
+(
+100
+,
+100
+)
+,
+(
+300
+,
+100
+)
+,
+(
+300
+,
+300
+)
+,
+(
+100
+,
+300
+)
+]
+
+
+{\displaystyle [(100,100),(300,100),(300,300),(100,300)]}
+
+
+Print the sequence of points that define the resulting clipped polygon.
+
+
+
+Extra credit
+
+Display all three polygons on a graphical surface, using a different color for each polygon and filling the resulting polygon.
+
+(When displaying you may use either a north-west or a south-west origin, whichever is more convenient for your display mechanism.)
+
+
+
+",#TypeScript,TypeScript,"interface XYCoords  {
+    x : number;
+    y : number;
+}
+ 
+const inside = ( cp1 : XYCoords, cp2 : XYCoords, p : XYCoords) : boolean => {
+    return (cp2.x-cp1.x)*(p.y-cp1.y) > (cp2.y-cp1.y)*(p.x-cp1.x);
+};
+ 
+const intersection = ( cp1 : XYCoords ,cp2 : XYCoords ,s : XYCoords, e : XYCoords ) : XYCoords => {
+    const dc = {
+	x:  cp1.x - cp2.x,
+	y : cp1.y - cp2.y
+	 },
+    dp = { x: s.x - e.x,
+	   y : s.y - e.y
+	 },
+    n1 = cp1.x * cp2.y - cp1.y * cp2.x,
+    n2 = s.x * e.y - s.y * e.x, 
+    n3 = 1.0 / (dc.x * dp.y - dc.y * dp.x);
+    return { x : (n1*dp.x - n2*dc.x) * n3,
+	     y : (n1*dp.y - n2*dc.y) * n3
+	   };
+};
+ 
+export const sutherland_hodgman = ( subjectPolygon : Array<XYCoords>,
+				   clipPolygon : Array<XYCoords> ) : Array<XYCoords> => {
+ 
+    let cp1 : XYCoords = clipPolygon[clipPolygon.length-1];
+    let cp2 : XYCoords;
+    let s : XYCoords;
+    let e : XYCoords;
+ 
+    let outputList : Array<XYCoords> = subjectPolygon;
+ 
+    for( var j in clipPolygon ) {
+        cp2 = clipPolygon[j];
+        var inputList = outputList;
+        outputList = [];
+        s = inputList[inputList.length - 1]; // last on the input list
+        for (var i in inputList) {
+	    e = inputList[i];
+	    if (inside(cp1,cp2,e)) {
+                if (!inside(cp1,cp2,s)) {
+		    outputList.push(intersection(cp1,cp2,s,e));
+                }
+                outputList.push(e);
+	    }
+	    else if (inside(cp1,cp2,s)) {
+                outputList.push(intersection(cp1,cp2,s,e));
+	    }
+	    s = e;
+        }
+        cp1 = cp2;
+    }
+    return outputList
+}",1553,57
+12347,http://rosettacode.org/wiki/Sum_digits_of_an_integer,Sum digits of an integer,"Task
+
+Take a   Natural Number   in a given base and return the sum of its digits:
+
+   110         sums to   1
+   123410   sums to   10
+   fe16       sums to   29
+   f0e16     sums to   29
+
+",#TypeScript,TypeScript,"// Sum digits of an integer
+ 
+function sumOfDigitBase(n: number, bas: number): number {
+  var digit = 0, sum = 0;
+  while (n > 0)
+  {
+    var tmp = Math.floor(n / bas);
+    digit = n - bas * tmp;
+    n = tmp;
+    sum += digit;
+  }
+  return sum;
+}
+ 
+console.log(`    1 sums to ${sumOfDigitBase(1, 10)}`); 
+console.log(` 1234 sums to ${sumOfDigitBase(1234, 10)}`); 
+console.log(` 0xfe sums to ${sumOfDigitBase(0xfe, 16)}`); 
+console.log(`0xf0e sums to ${sumOfDigitBase(0xf0e, 16)}`); 
+maxint = Number.MAX_SAFE_INTEGER;
+console.log(`${maxint} (Number.MAX_SAFE_INTEGER) sums to ${sumOfDigitBase(maxint, 10)}`); 
+ ",609,21
+15517,http://rosettacode.org/wiki/Sorting_algorithms/Quicksort,Sorting algorithms/Quicksort,"
+Sorting Algorithm
+
+This is a sorting algorithm.   It may be applied to a set of data in order to sort it.    
+For comparing various sorts, see compare sorts.  
+For other sorting algorithms,   see sorting algorithms,   or:
+
+O(n logn) sorts
+Heap sort |
+Merge sort |
+Patience sort |
+Quick sort
+O(n log2n) sorts
+Shell Sort
+O(n2) sorts
+Bubble sort |
+Cocktail sort |
+Cocktail sort with shifting bounds |
+Comb sort |
+Cycle sort |
+Gnome sort |
+Insertion sort |
+Selection sort |
+Strand sort
+other sorts
+Bead sort |
+Bogo sort |
+Common sorted list |
+Composite structures sort |
+Custom comparator sort |
+Counting sort |
+Disjoint sublist sort |
+External sort |
+Jort sort |
+Lexicographical sort |
+Natural sorting |
+Order by pair comparisons |
+Order disjoint list items |
+Order two numerical lists |
+Object identifier (OID) sort |
+Pancake sort |
+Quickselect |
+Permutation sort |
+Radix sort |
+Ranking methods |
+Remove duplicate elements |
+Sleep sort |
+Stooge sort |
+[Sort letters of a string] |
+Three variable sort |
+Topological sort |
+Tree sort
+
+
+
+
+ This page uses content from Wikipedia. The original article was at Quicksort. The list of authors can be seen in the page history. As with Rosetta Code, the text of Wikipedia is available under the GNU FDL. (See links for details on variance)
+
+
+
+Task
+
+Sort an array (or list) elements using the   quicksort   algorithm.
+
+The elements must have a   strict weak order   and the index of the array can be of any discrete type.
+
+For languages where this is not possible, sort an array of integers.
+
+
+
+Quicksort, also known as   partition-exchange sort,   uses these steps.
+
+   Choose any element of the array to be the pivot.
+   Divide all other elements (except the pivot) into two partitions.
+   All elements less than the pivot must be in the first partition.
+   All elements greater than the pivot must be in the second partition.
+   Use recursion to sort both partitions.
+   Join the first sorted partition, the pivot, and the second sorted partition.
+
+
+The best pivot creates partitions of equal length (or lengths differing by   1).
+
+The worst pivot creates an empty partition (for example, if the pivot is the first or last element of a sorted array).
+
+The run-time of Quicksort ranges from    O(n log n)    with the best pivots, to    O(n2)    with the worst pivots, where    n    is the number of elements in the array.
+
+
+
+This is a simple quicksort algorithm, adapted from Wikipedia.
+
+function quicksort(array)
+    less, equal, greater := three empty arrays
+    if length(array) > 1  
+        pivot := select any element of array
+        for each x in array
+            if x < pivot then add x to less
+            if x = pivot then add x to equal
+            if x > pivot then add x to greater
+        quicksort(less)
+        quicksort(greater)
+        array := concatenate(less, equal, greater)
+
+A better quicksort algorithm works in place, by swapping elements within the array, to avoid the memory allocation of more arrays.
+
+function quicksort(array)
+    if length(array) > 1
+        pivot := select any element of array
+        left := first index of array
+        right := last index of array
+        while left ≤ right
+            while array[left] < pivot
+                left := left + 1
+            while array[right] > pivot
+                right := right - 1
+            if left ≤ right
+                swap array[left] with array[right]
+                left := left + 1
+                right := right - 1
+        quicksort(array from first index to right)
+        quicksort(array from left to last index)
+
+Quicksort has a reputation as the fastest sort. Optimized variants of quicksort are common features of many languages and libraries. One often contrasts quicksort with   merge sort,   because both sorts have an average time of    O(n log n). 
+
+ ""On average, mergesort does fewer comparisons than quicksort, so it may be better when complicated comparison routines are used. Mergesort also takes advantage of pre-existing order, so it would be favored for using sort() to merge several sorted arrays. On the other hand, quicksort is often faster for small arrays, and on arrays of a few distinct values, repeated many times."" — http://perldoc.perl.org/sort.html
+Quicksort is at one end of the spectrum of divide-and-conquer algorithms, with merge sort at the opposite end.
+
+ Quicksort is a conquer-then-divide algorithm, which does most of the work during the partitioning and the recursive calls. The subsequent reassembly of the sorted partitions involves trivial effort.
+ Merge sort is a divide-then-conquer algorithm. The partioning happens in a trivial way, by splitting the input array in half. Most of the work happens during the recursive calls and the merge phase.
+
+
+With quicksort, every element in the first partition is less than or equal to every element in the second partition. Therefore, the merge phase of quicksort is so trivial that it needs no mention!
+
+This task has not specified whether to allocate new arrays, or sort in place. This task also has not specified how to choose the pivot element. (Common ways to are to choose the first element, the middle element, or the median of three elements.) Thus there is a variety among the following implementations.
+
+
+
+",#TypeScript,TypeScript," 
+/**
+  Generic quicksort function using typescript generics.
+  Follows quicksort as done in CLRS.
+*/
+export type Comparator<T> = (o1: T, o2: T) => number;
+ 
+ 
+export function quickSort<T>(array: T[], compare: Comparator<T>) {
+  if (array.length <= 1 || array == null) {
+    return;
+  }
+  sort(array, compare, 0, array.length - 1);
+}
+ 
+function sort<T>(
+    array: T[], compare: Comparator<T>, low: number, high: number) {
+  if (low < high) {
+    const partIndex = partition(array, compare, low, high);
+    sort(array, compare, low, partIndex - 1);
+    sort(array, compare, partIndex + 1, high);
+  }
+}
+ 
+function partition<T>(
+    array: T[], compare: Comparator<T>, low: number, high: number): number {
+  const pivot: T = array[high];
+  let i: number = low - 1;
+  for (let j = low; j <= high - 1; j++) {
+    if (compare(array[j], pivot) == -1) {
+      i = i + 1;
+      swap(array, i, j)
+    }
+  }
+  if (compare(array[high], array[i + 1]) == -1) {
+    swap(array, i + 1, high);
+  }
+  return i + 1;
+}
+ 
+function swap<T>(array: T[], i: number, j: number) {
+  const newJ: T = array[i];
+  array[i] = array[j];
+  array[j] = newJ;
+}
+ 
+export function testQuickSort(): void {
+  function numberComparator(o1: number, o2: number): number {
+    if (o1 < o2) {
+      return -1;
+    } else if (o1 == o2) {
+      return 0;
+    }
+    return 1;
+  }
+  let tests: number[][] = [
+    [], [1], [2, 1], [-1, 2, -3], [3, 16, 8, -5, 6, 4], [1, 2, 3, 4, 5, 6],
+    [1, 2, 3, 4, 5]
+  ];
+ 
+  for (let testArray of tests) {
+    quickSort(testArray, numberComparator);
+    console.log(testArray);
+  }
+}
+ ",1577,66
+19833,http://rosettacode.org/wiki/Semiprime,Semiprime,"Semiprime numbers are natural numbers that are products of exactly two (possibly equal) prime numbers.
+
+
+Semiprimes   are also known as:
+
+   semi-primes
+   biprimes
+   bi-primes
+    2-almost    primes
+   or simply:    P2  
+
+
+Example
+ 
+   1679  =  23 × 73  
+
+(This particular number was chosen as the length of the Arecibo message).
+
+
+
+Task
+
+Write a function determining whether a given number is semiprime.
+
+
+
+See also
+
+ The Wikipedia article:  semiprime.
+ The Wikipedia article:  almost prime.
+ The OEIS sequence:  A001358: semiprimes  which has a shorter definition: the product of two primes.
+
+",#TypeScript,TypeScript," 
+// Semiprime
+ 
+function primeFactorsCount(n: number): number {
+  n = Math.abs(n);
+  var count = 0; // Result
+  if (n >= 2)
+    for (factor = 2; factor <= n; factor++) 
+      while n % factor == 0) {
+        count++;
+        n /= factor;
+      }
+  return count;
+}
+ 
+const readline = require('readline').createInterface({
+  input: process.stdin, output: process.stdout
+});
+ 
+readline.question('Enter an integer: ', sn => {
+  var n = parseInt(sn);
+  console.log(primeFactorsCount(n) == 2 ? 
+    ""It is a semiprime."" : ""It is not a semiprime."");
+  readline.close();
+});
+ ",569,26
+23346,http://rosettacode.org/wiki/Roman_numerals/Encode,Roman numerals/Encode,"Task
+
+Create a function taking a positive integer as its parameter and returning a string containing the Roman numeral representation of that integer. Modern Roman numerals are written by expressing each digit separately, starting with the left most digit and skipping any digit with a value of zero.
+
+
+
+In Roman numerals:
+
+ 1990 is rendered: 1000=M, 900=CM, 90=XC; resulting in MCMXC
+ 2008 is written as 2000=MM, 8=VIII; or MMVIII
+ 1666 uses each Roman symbol in descending order: MDCLXVI
+
+",#TypeScript,TypeScript," 
+// Roman numerals/Encode
+ 
+const weightsSymbols: [number, string][] = 
+  [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], 
+  [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+// 3888 or MMMDCCCLXXXVIII (15 chars) is the longest string properly encoded
+// with these symbols.
+ 
+function toRoman(n: number): string {
+  var roman = """"; // Result
+  for (i = 0; i <= 12 && n > 0; i++) {
+    var w = weightsSymbols[i][0];
+    while (n >= w) {
+      roman += weightsSymbols[i][1];
+      n -= w;
+    }
+  }
+  return roman;
+}
+ 
+console.log(toRoman(1990)); // MCMXC
+console.log(toRoman(2022)); // MMXXII
+console.log(toRoman(3888)); // MMMDCCCLXXXVIII
+ ",697,25
+28937,http://rosettacode.org/wiki/Pi,Pi,"
+Create a program to continually calculate and output the next decimal digit of   
+
+
+
+π
+
+
+{\displaystyle \pi }
+
+   (pi).
+
+The program should continue forever (until it is aborted by the user) calculating and outputting each decimal digit in succession.
+
+The output should be a decimal sequence beginning   3.14159265 ...
+
+
+
+Note: this task is about   calculating   pi.   For information on built-in pi constants see Real constants and functions.
+
+
+
+Related Task Arithmetic-geometric mean/Calculate Pi
+",#TypeScript,TypeScript,"type AnyWriteableObject={write:((textToOutput:string)=>any)};
+ 
+function calcPi(pipe:AnyWriteableObject) {
+    let q = 1n, r=0n, t=1n, k=1n, n=3n, l=3n;
+    while (true) {
+        if (q * 4n + r - t < n* t) {
+            pipe.write(n.toString());
+            let nr = (r - n * t) * 10n;
+            n  = (q * 3n + r) * 10n / t - n * 10n ;
+            q  = q * 10n;
+            r  = nr;
+        } else {
+            let nr = (q * 2n + r) * l;
+            let nn = (q * k * 7n + 2n + r * l) / (t * l);
+            q = q * k;
+            t = t * l;
+            l = l + 2n;
+            k = k + 1n;
+            n  = nn;
+            r  = nr;
+        }
+    }
+}
+ 
+calcPi(process.stdout);",679,25
+30636,http://rosettacode.org/wiki/Pascal%27s_triangle,Pascal's triangle,"Pascal's triangle is an arithmetic and geometric figure often associated with the name of Blaise Pascal, but also studied centuries earlier in India, Persia, China and elsewhere.
+
+Its first few rows look like this: 
+
+    1
+   1 1
+  1 2 1
+ 1 3 3 1 
+
+where each element of each row is either 1 or the sum of the two elements right above it.
+
+For example, the next row of the triangle would be:
+
+   1   (since the first element of each row doesn't have two elements above it)
+   4   (1 + 3)
+   6   (3 + 3)
+   4   (3 + 1)
+   1   (since the last element of each row doesn't have two elements above it) 
+So the triangle now looks like this: 
+
+    1
+   1 1
+  1 2 1
+ 1 3 3 1
+1 4 6 4 1 
+
+Each row    n    (starting with row   0   at the top) shows the coefficients of the binomial expansion of    (x + y)n. 
+
+
+
+Task
+
+Write a function that prints out the first    n    rows of the triangle   (with    f(1)    yielding the row consisting of only the element 1).
+
+This can be done either by summing elements from the previous rows or using a binary coefficient or combination function.
+
+Behavior for    n ≤ 0    does not need to be uniform, but should be noted.
+
+
+
+See also
+
+ Evaluate binomial coefficients
+
+",#TypeScript,TypeScript,"// Pascal's triangle
+ 
+function pascal(n: number): void {
+  // Display the first n rows of Pascal's triangle
+  // if n<=0 then nothing is displayed
+  var ld: number[] = new Array(40); // Old
+  var nw: number[] = new Array(40); // New
+  for (var row = 0; row < n; row++) {
+    nw[0] = 1;
+    for (var i = 1; i <= row; i++) 
+      nw[i] = ld[i - 1] + ld[i];
+    process.stdout.write("" "".repeat((n - row - 1) * 2));
+    for (var i = 0; i <= row; i++) {
+      if (nw[i] < 100) 
+        process.stdout.write("" "");
+      process.stdout.write(nw[i].toString());
+      if (nw[i] < 10) 
+        process.stdout.write("" "");
+      process.stdout.write("" "");
+    }
+    nw[row + 1] = 0;
+    // We do not copy data from nw to ld
+    // but we work with references.
+    var tmp = ld;
+    ld = nw; 
+    nw = tmp;
+    console.log();
+  }
+}
+ 
+pascal(13);
+ ",836,32
+30799,http://rosettacode.org/wiki/One-time_pad,One-time pad,"Implement a One-time pad, for encrypting and decrypting messages.
+
+To keep it simple, we will be using letters only.
+
+Sub-Tasks
+
+ Generate the data for a One-time pad (user needs to specify a filename and length)
+ The important part is to get ""true random"" numbers, e.g. from /dev/random
+ encryption / decryption ( basically the same operation, much like Rot-13 )
+ For this step, much of Vigenère cipher could be reused,
+with the key to be read from the file containing the One-time pad.
+ optional: management of One-time pads: list, mark as used, delete, etc.
+ Somehow, the users needs to keep track which pad to use for which partner.
+To support the management of pad-files:
+
+ Such files have a file-extension "".1tp""
+ Lines starting with ""#"" may contain arbitary meta-data (i.e. comments)
+ Lines starting with ""-"" count as ""used""
+ Whitespace within the otp-data is ignored
+
+
+For example, here is the data from Wikipedia:
+
+# Example data - Wikipedia - 2014-11-13
+-ZDXWWW EJKAWO FECIFE WSNZIP PXPKIY URMZHI JZTLBC YLGDYJ 
+-HTSVTV RRYYEG EXNCGA GGQVRF FHZCIB EWLGGR BZXQDQ DGGIAK 
+ YHJYEQ TDLCQT HZBSIZ IRZDYS RBYJFZ AIRCWI UCVXTW YKPQMK 
+ CKHVEX VXYVCS WOGAAZ OUVVON GCNEVR LMBLYB SBDCDC PCGVJX 
+ QXAUIP PXZQIJ JIUWYH COVWMJ UZOJHL DWHPER UBSRUJ HGAAPR 
+ CRWVHI FRNTQW AJVWRT ACAKRD OZKIIB VIQGBK IJCWHF GTTSSE 
+ EXFIPJ KICASQ IOUQTP ZSGXGH YTYCTI BAZSTN JKMFXI RERYWE 
+
+
+
+See also
+ one time pad encryption in Python
+ snapfractalpop - One-Time-Pad Command-Line-Utility (C).
+ Crypt-OTP-2.00 on CPAN (Perl)
+
+",#TypeScript,TypeScript," 
+#!/usr/bin/env node
+import { writeFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs';
+//https://www.elitizon.com/2021/01-09-how-to-create-a-cli-command-with-typescript/#:~:text=%20Boost%20your%20productivity%20by%20creating%20your%20own,information.%20Required%3A%20string.%20%20...%20%20More%20
+ 
+const a:string[] = process.argv;
+const argv:string[] = a.splice(2)
+/**
+ *  Extension of the pad files
+ */
+const padExtension:string = "".1tp"";
+/**
+ * Extension of the key generated
+ */
+const keyExtension:string = "".key"";
+/**
+ * Array of commands usable
+ */
+const commands:string[] = [""--generate"", ""--encrypt"",""--decrypt""];
+/**
+ * The alphabet
+ */
+const stringLetter = ""ABCDEFGHIJKLMNOPQRSTUVWXYZ""
+ 
+ 
+/**
+ * Main function
+ */
+const main = ():void => {
+    // if no args have been give display help
+    if(argv.length == 0){
+        help();
+        return;
+    }
+ 
+    // Check if there is a command in the file
+    if(commands.includes(argv[0])){
+        let choise = argv[0].trim().toLowerCase();
+        if(choise === ""--generate""){
+                console.log(""Generating action chosen"");
+ 
+                // Check if the arguments have been given to generate a new key
+                if(!argv[1]){
+                    (""Pad name not specified"")
+                    help();
+                    return;
+                }
+ 
+                // Check if the length of the filename is at least 4 characters
+                if(argv[1].length <= 3){
+                    console.log(""The name of the pad should be at least 4 letters long"");
+                    help();
+                    return;
+                }
+ 
+                // Check if the filesize is a number(should be the second argv)
+                let fileSize = +argv[2];
+                if(isNaN(fileSize)){
+                    console.log(""File size should be a number"");
+                    help();
+                    return
+                }
+ 
+                createFile(argv[1], fileSize)
+        }
+ 
+        // If the selected action is to encrypt
+        if( choise === ""--encrypt""){
+                console.log(""Encrypting action chosen"");
+                let padDataName = argv[2] ? `${argv[2].trim()}${padExtension}` : `${argv[1].trim()}${padExtension}`
+ 
+                // Check if the files exist
+                if(!argv[1] && !argv[2]){
+                    console.log(""Parameters not given"");
+                    help();
+                    return;
+                }
+ 
+                // Check if the text file exists and the pad file
+                if(!existsSync(`${argv[1].trim().toLowerCase()}.txt`)){
+                    console.log(""Text file doesn't exit"");
+                    help();
+                    return;
+                }
+ 
+                console.log(""Reading file"")
+                // Get the data from the file as well as the data from the padfile
+                let fileDataEnc = readFileSync(`${argv[1].trim().toLowerCase()}.txt`, 'utf-8'); 
+ 
+                if(!existsSync(`${argv[2]}${padExtension}`)){
+                    console.log(""1tp file doesn't exist, generating new 1pt file"");
+                    createFile(argv[1], fileDataEnc.length);
+                }
+ 
+                console.log(""Reading 1pt file"");
+                // Get the pad data
+                let padDataEnc = RetrievePadData(padDataName);
+ 
+                // if the file 1pt file has been specified but it's not big enough
+                if(fileDataEnc.length > padDataEnc.length){
+                    console.log(""The file is bigger than the 1tp file. Generating a new padfile"");
+                    createFile(argv[1], fileDataEnc.length);
+                    padDataEnc = RetrievePadData(`${argv[1]}${padExtension}`)
+                }
+ 
+                console.log(""Converting the file"");
+                let keyEnc = padFunction(fileDataEnc,padDataEnc);
+                createFile(`${argv[1]}.key`, keyEnc.length, false, keyEnc);
+ 
+        }
+ 
+ 
+        if(choise === ""--decrypt""){
+                console.log(""Decrypting action chosen"");
+ 
+                // Check if the necessary args were given
+                if(!argv[1]){
+                    console.log(""No file specified For decryption specified"")
+                    return;
+                }
+                if(!argv[2]){
+                    console.log(""No 1pt file was given, Please specify the file to use"");
+                    return;
+                }
+                if(!argv[3] || argv[3].trim() != '-o') {
+                   console.log(""No file for output specified"");
+                }
+ 
+ 
+                let fileNameDec = `${argv[1].trim()}${keyExtension}`; 
+                let padNameDec = `${argv[2].trim()}${padExtension}`;
+ 
+                // Check if the files exists or not
+                if(!existsSync(fileNameDec)){
+                    console.log(""File specified does not exist"");
+                    return;
+                }
+                if(!existsSync(padNameDec)){
+                    console.log(""1pt file specified doesn't exist"");
+                    return;
+                }
+ 
+                console.log(""Read the encrypted file"");
+                let fileDataDec = readFileSync(fileNameDec, 'utf-8');
+                console.log(""Reading the 1pt file"");
+                let padDataDec = RetrievePadData(padNameDec);
+ 
+                // decrypt the file
+                console.log(""Generating the file"");
+                let keyDec = padFunction(fileDataDec, padDataDec)
+ 
+ 
+                if(argv[3] && argv[3].trim()==='-o'){
+                    let textFileDec = `${argv[1].trim()}.txt`; 
+                    if(!argv[4]){
+                        console.log(""No output file specified, creating a new file"")
+                    }
+                    if(argv[4] && argv[4].trim().length < 3){
+                        console.log(""The name of the output file should be greater than 4 characters"");
+                        console.log(`Creating new file`)
+                    }else {
+                        argv[4] ? textFileDec = `${argv[4].trim()}.txt` : textFileDec = `${argv[1].trim()}.txt`
+                    }
+ 
+                    console.log(""Generating text file"");
+                    createFile(textFileDec, 0, false, keyDec );
+                    // https://sebhastian.com/javascript-delete-file/
+                    console.log(""Deleting encrypted file"");
+                    unlinkSync(fileNameDec);
+                    console.log(""Deleting 1pt file"");
+                    unlinkSync(padNameDec);
+                }else {
+                    console.log(""The decrypted file is: \n\n"")
+                    console.log(keyDec);
+                }
+        }
+ 
+    }else {
+        console.log(""Invalid action"");
+        help();
+        return;
+    }
+ 
+}
+ 
+/**
+ * Display help messages
+ */
+const help = ():void => {
+    console.log(""\n\n\n1tp is a tool used to encrypt and decrypt text files"");
+    console.log(""Look at the commands below to learn the use of it"");
+    console.log(""The input file for encryption should be a txt file"");
+    console.log(""The output will be a .kye file and a .1pt file"");
+    console.log(""\n\n**Note: Don't add file extensios while running the command**"");
+    console.log(""**Note: if during creation, the application encouters a file already existing, it will overwrite the file**"");
+    console.log(""Options: "");
+    console.log(""\t -h | --help \t\t\t\t\t\t\t View help"");
+    console.log(""\t --generate <pad name> <size of file> \t\t\t\t Create a pad file given a size"");
+    console.log(""\t --encrypt <txt file> <pad name> \t\t\t\t Encrypt a file give a pad file"");
+    console.log(""\t\t\t\t All parameters for encryption are required"");
+    console.log(""\t --decrypt <key file> <pad name> -o <txt file>  \t Decrypt a file give a key and 1tp files"");
+    console.log(""\t\t\t\t If output file is not specified it will display the text inside the console"");
+    console.log(""\t\t\t\t If only the `-o` option is defined without a txt file, it will create a new file"");
+    console.log(""\n** Note: Decrypting a file will delete the key and the 1pt files**"");
+}
+ 
+/**
+ * Create a file with a random key
+ * @param file Name of the file being created
+ * @param fileSize Size of the file being created
+ */
+const createFile = (file:string, fileSize:number = 1024, key:boolean = true, data:string = """"):void => {
+    let fileName:string;
+    if(key){
+        fileName = `${file.trim().toLowerCase()}${padExtension}`;
+ 
+        // https://flaviocopes.com/how-to-check-if-file-exists-node/#:~:text=The%20way%20to%20check%20if%20a%20file%20exists,the%20existence%20of%20a%20file%20without%20opening%20it%3A
+ 
+        console.log(""Generating the One time pad"");
+        const pad = generateOneTimePad(fileSize);
+        //https://code-boxx.com/create-save-files-javascript/#:~:text=%20The%20possible%20ways%20to%20create%20and%20save,the%20server.%0Avar%20data%20%3D%20new%20FormData...%20More%20
+        console.log(""Writing to file"");
+        writeFileSync(fileName, pad);
+        return; 
+ 
+    }
+ 
+    console.log(""Writing to file"");
+    writeFileSync(file, data);
+};
+ 
+/**
+ * Generate a pad
+ * @param fileSize Size of the new pad being created
+ * @returns the new pad
+ */
+const generateOneTimePad = (fileSize:number):string => {
+    /**
+     * String in which we will put the one time pad
+     */
+    let otp:string = """";
+    /**
+     * used to organize the key
+     */
+    let splitCounter = 0;
+    let columnCounter = 0;
+ 
+    for (let i = 0; i <= fileSize;) {
+        if(splitCounter < 6){
+            // Generate a random letter from the alphabet given
+            otp += (stringLetter.charAt(Math.random()*1000%stringLetter.length))
+            splitCounter++;
+            i++;
+            continue;
+        }
+        // Used to organize the key so it looks estetic
+        if(columnCounter < 7){
+            splitCounter = 0;
+            columnCounter++;
+            otp += (""\t"");
+            continue;
+        }else{
+            splitCounter = 0;
+            columnCounter = 0;
+            otp += (""\n"");
+            continue;
+        }
+ 
+    }
+    return otp
+}
+ 
+/**
+ * Get the pad data from the file
+ * @returns Text pad data
+ */
+const RetrievePadData = (padFile:string):string => {
+    // Retrieve the pad data
+    let padData = """" 
+    // read the file
+    const data = readFileSync(`${padFile}`, 'utf-8') 
+ 
+    // Take out all the tabs and new lines we added while generating the key
+    const stringArray = data.toString().split(""\n"");
+    for (let index = 0; index < stringArray.length; index++) {
+        const element = stringArray[index].split(""\t"");
+        for (let i = 0; i < element.length; i++) {
+            padData += element[i];
+        }
+    }
+ 
+    return padData;
+}
+ 
+/**
+ * One time pad function
+ * @param fileData Data of the file to encrypt or decrypt
+ * @param padData Data of the pad file
+ * @returns The generated encryption or decryption
+ */
+const padFunction = (fileData:string, padData:string ):string => {
+    let key = """";
+    for (let i = 0; i < fileData.length; i++) {
+        key += String.fromCharCode(-fileData[i].charCodeAt(0)+padData[i].toLowerCase().charCodeAt(0)+97);
+        // console.log(`File char: ${fileData[i]} ${fileData[i].charCodeAt(0)}   Pad Data: ${padData[i]} ${padData[i].toLocaleLowerCase().charCodeAt(0)}   Key: ${key[i]} ${key[i].charCodeAt(0)}`)
+    }
+    return key;
+}
+ 
+main();
+ ",11391,311
+31677,http://rosettacode.org/wiki/Palindrome_detection,Palindrome detection,"A palindrome is a phrase which reads the same backward and forward.
+
+Task[edit]
+Write a function or program that checks whether a given sequence of characters (or, if you prefer, bytes)
+is a palindrome.
+
+For extra credit:
+
+ Support Unicode characters.
+ Write a second function (possibly as a wrapper to the first) which detects inexact palindromes, i.e. phrases that are palindromes if white-space and punctuation is ignored and case-insensitive comparison is used.
+Hints
+ It might be useful for this task to know how to reverse a string.
+ This task's entries might also form the subjects of the task Test a function.
+Related tasks
+Word plays
+
+Ordered words
+Palindrome detection
+Semordnilap
+Anagrams
+Anagrams/Deranged anagrams
+
+
+
+
+
+Other tasks related to string operations:
+
+Metrics
+ Array length
+ String length
+ Copy a string
+ Empty string  (assignment)
+Counting
+ Word frequency
+ Letter frequency
+ Jewels and stones
+ I before E except after C
+ Bioinformatics/base count
+ Count occurrences of a substring
+ Count how many vowels and consonants occur in a string
+Remove/replace
+ XXXX redacted
+ Conjugate a Latin verb
+ Remove vowels from a string
+ String interpolation (included)
+ Strip block comments
+ Strip comments from a string
+ Strip a set of characters from a string
+ Strip whitespace from a string -- top and tail
+ Strip control codes and extended characters from a string
+Anagrams/Derangements/shuffling
+ Word wheel
+ ABC problem
+ Sattolo cycle
+ Knuth shuffle
+ Ordered words
+ Superpermutation minimisation
+ Textonyms (using a phone text pad)
+ Anagrams
+ Anagrams/Deranged anagrams
+ Permutations/Derangements
+Find/Search/Determine
+ ABC words
+ Odd words
+ Word ladder
+ Semordnilap
+ Word search
+ Wordiff  (game)
+ String matching
+ Tea cup rim text
+ Alternade words
+ Changeable words
+ State name puzzle
+ String comparison
+ Unique characters
+ Unique characters in each string
+ Extract file extension
+ Levenshtein distance
+ Palindrome detection
+ Common list elements
+ Longest common suffix
+ Longest common prefix
+ Compare a list of strings 
+ Longest common substring
+ Find common directory path
+ Words from neighbour ones
+ Change e letters to i in words
+ Non-continuous subsequences
+ Longest common subsequence
+ Longest palindromic substrings
+ Longest increasing subsequence
+ Words containing ""the"" substring
+ Sum of the digits of n is substring of n
+ Determine if a string is numeric
+ Determine if a string is collapsible
+ Determine if a string is squeezable
+ Determine if a string has all unique characters
+ Determine if a string has all the same characters
+ Longest substrings without repeating characters
+ Find words which contains all the vowels
+ Find words which contains most consonants
+ Find words which contains more than 3 vowels
+ Find words which first and last three letters are equals
+ Find words which odd letters are consonants and even letters are vowels or vice_versa
+Formatting
+ Substring
+ Rep-string
+ Word wrap
+ String case
+ Align columns
+ Literals/String
+ Repeat a string
+ Brace expansion
+ Brace expansion using ranges
+ Reverse a string
+ Phrase reversals
+ Comma quibbling
+ Special characters
+ String concatenation
+ Substring/Top and tail
+ Commatizing numbers
+ Reverse words in a string
+ Suffixation of decimal numbers
+ Long literals, with continuations 
+ Numerical and alphabetical suffixes
+ Abbreviations, easy
+ Abbreviations, simple
+ Abbreviations, automatic
+Song lyrics/poems/Mad Libs/phrases
+ Mad Libs
+ Magic 8-ball
+ 99 Bottles of Beer
+ The Name Game (a song)
+ The Old lady swallowed a fly
+ The Twelve Days of Christmas
+Tokenize
+ Text between
+ Tokenize a string
+ Word break problem
+ Tokenize a string with escaping
+ Split a character string based on change of character
+Sequences
+ Show ASCII table
+ De Bruijn sequences
+ Self-referential sequences
+ Generate lower case ASCII alphabet
+
+
+
+",#TypeScript,TypeScript,"const detectNonLetterRegexp=/[^A-ZÀ-ÞЀ-Я]/g;
+ 
+function stripDiacritics(phrase:string){
+    return phrase.normalize('NFD').replace(/[\u0300-\u036f]/g, """")
+}
+ 
+function isPalindrome(phrase:string){
+    const TheLetters = stripDiacritics(phrase.toLocaleUpperCase().replace(detectNonLetterRegexp, ''));
+    const middlePosition = TheLetters.length/2;
+    const leftHalf = TheLetters.substr(0, middlePosition);
+    const rightReverseHalf = TheLetters.substr(-middlePosition).split('').reverse().join('');
+    return leftHalf == rightReverseHalf;
+}
+ 
+console.log(isPalindrome('Sueño que esto no es un palíndromo'))
+console.log(isPalindrome('Dábale arroz a la zorra el abad!'))
+console.log(isPalindrome('Я иду с мечем судия'))
+ ",722,18
+34210,http://rosettacode.org/wiki/N%27th,N'th,"Write a function/method/subroutine/... that when given an integer greater than or equal to zero returns a string of the number followed by an apostrophe then the ordinal suffix.
+
+
+
+Example
+
+Returns would include 1'st 2'nd 3'rd 11'th 111'th 1001'st 1012'th
+
+
+
+Task
+
+Use your routine to show here the output for at least the following (inclusive) ranges of integer inputs:
+0..25, 250..265, 1000..1025
+
+
+Note: apostrophes are now optional to allow correct apostrophe-less English.
+
+
+
+",#TypeScript,TypeScript," 
+// N'th
+function suffix(n: number): string {
+  var nMod10: number = n % 10; 
+  var nMod100: number = n % 100;
+  if (nMod10 == 1 && nMod100 != 11)
+    return ""st"";
+  else if (nMod10 == 2 && nMod100 != 12)
+    return ""nd"";
+  else if (nMod10 == 3 && nMod100 != 13)
+    return ""rd"";
+  else
+    return ""th"";
+}
+ 
+function printImages(loLim: number, hiLim: number) {
+  for (i = loLim; i <= hiLim; i++)
+    process.stdout.write(`${i}` + suffix(i) + "" "");
+  process.stdout.write(""\n"");
+}
+ 
+printImages(   0,   25);
+printImages( 250,  265);
+printImages(1000, 1025);
+ ",559,25
+34323,http://rosettacode.org/wiki/Modular_inverse,Modular inverse,"From Wikipedia:
+
+In modular arithmetic,   the modular multiplicative inverse of an integer    a    modulo    m    is an integer    x    such that
+
+
+
+
+
+a
+
+x
+≡
+1
+
+
+(
+mod
+
+m
+)
+
+.
+
+
+{\displaystyle a\,x\equiv 1{\pmod {m}}.}
+
+
+Or in other words, such that:
+
+
+
+
+
+∃
+k
+∈
+
+Z
+
+,
+
+a
+
+x
+=
+1
++
+k
+
+m
+
+
+{\displaystyle \exists k\in \mathbb {Z} ,\qquad a\,x=1+k\,m}
+
+
+It can be shown that such an inverse exists   if and only if    a    and    m    are coprime,   but we will ignore this for this task.
+
+
+
+Task
+
+Either by implementing the algorithm, by using a dedicated library or by using a built-in function in
+your language,   compute the modular inverse of   42 modulo 2017.
+
+
+
+",#TypeScript,TypeScript," 
+// Modular inverse
+ 
+function modInv(e: number, t: number): number {
+  var d = 0;
+  if (e < t) {
+    var count = 1;
+    var bal = e;
+    do {
+      var step = Math.floor((t - bal) / e) + 1;
+      bal += step * e;
+      count += step;
+      bal -= t;
+    } while (bal != 1);
+    d = count;
+  }
+  return d;
+}
+ 
+console.log(`${modInv(42, 2017)}`); // 1969
+ ",356,21
+35219,http://rosettacode.org/wiki/Multiplication_tables,Multiplication tables,"Task
+
+Produce a formatted   12×12   multiplication table of the kind memorized by rote when in primary (or elementary) school.
+
+
+
+Only print the top half triangle of products.
+
+
+
+",#TypeScript,TypeScript," 
+// Multiplication tables
+ 
+function intToString(n: number, wdth: number): string {
+  sn = Math.floor(n).toString();
+  len = sn.length;
+  return (wdth < len ? ""#"".repeat(wdth) : "" "".repeat(wdth - len) + sn);
+}
+ 
+var n = 12;
+console.clear();
+for (j = 1; j < n; j++)
+  process.stdout.write(intToString(j, 3) + "" "");
+console.log(intToString(n, 3));
+console.log(""----"".repeat(n) + ""+"");
+for (i = 1; i <= n; i++) {
+  for (j = 1; j <= n; j++)
+    process.stdout.write(j < i ? ""    "" : intToString(i * j, 3) + "" "");
+  console.log(""| "" + intToString(i, 2));
+}
+ ",554,21
+39778,http://rosettacode.org/wiki/Long_year,Long year,"Most years have 52 weeks, some have 53, according to ISO8601.
+
+
+
+Task
+
+Write a function which determines if a given year is long (53 weeks) or not, and demonstrate it.
+
+
+
+",#TypeScript,TypeScript,"const isLongYear = (year: number): boolean => {
+  const jan1: Date = new Date(year, 0, 1);
+  const dec31: Date = new Date(year, 11, 31);
+  return (4 == jan1.getDay() || 4 == dec31.getDay())
+}
+ 
+for (let y: number = 1995; y <= 2045; y++) {
+  if (isLongYear(y)) {
+    console.log(y)
+  }
+}",286,11
+41057,http://rosettacode.org/wiki/Loop_over_multiple_arrays_simultaneously,Loop over multiple arrays simultaneously,"Task
+
+Loop over multiple arrays   (or lists or tuples or whatever they're called in
+your language)   and display the    i th    element of each.
+
+Use your language's   ""for each""   loop if it has one, otherwise iterate
+through the collection in order with some other loop.
+
+
+
+For this example, loop over the arrays:
+
+    (a,b,c)
+    (A,B,C) 
+    (1,2,3) 
+
+to produce the output:
+
+    aA1
+    bB2
+    cC3
+
+
+
+If possible, also describe what happens when the arrays are of different lengths.
+
+
+
+Related tasks
+
+   Loop over multiple arrays simultaneously
+   Loops/Break
+   Loops/Continue
+   Loops/Do-while
+   Loops/Downward for
+   Loops/For
+   Loops/For with a specified step
+   Loops/Foreach
+   Loops/Increment loop index within loop body
+   Loops/Infinite
+   Loops/N plus one half
+   Loops/Nested
+   Loops/While
+   Loops/with multiple ranges
+   Loops/Wrong ranges
+
+",#TypeScript,TypeScript,"// Loop over multiple arrays simultaneously
+var arr1: string[] = ['a', 'b', 'c'];
+var arr2: string[] = ['A', 'B', 'C'];
+var arr3: number[] = [1, 2, 3];
+for (var i = 0; i <= 2; i++)
+  console.log(`${arr1[i]}${arr2[i]}${arr3[i]}`);
+ ",231,7
+41113,http://rosettacode.org/wiki/Loops/For,Loops/For,"“For”   loops are used to make some block of code be iterated a number of times, setting a variable or parameter to a monotonically increasing integer value for each execution of the block of code.
+
+Common extensions of this allow other counting patterns or iterating over abstract structures other than the integers.
+
+
+
+Task
+
+Show how two loops may be nested within each other, with the number of iterations performed by the inner for loop being controlled by the outer for loop.
+
+Specifically print out the following pattern by using one for loop nested in another:
+
+*
+**
+***
+****
+*****
+
+
+Related tasks
+
+   Loop over multiple arrays simultaneously
+   Loops/Break
+   Loops/Continue
+   Loops/Do-while
+   Loops/Downward for
+   Loops/For
+   Loops/For with a specified step
+   Loops/Foreach
+   Loops/Increment loop index within loop body
+   Loops/Infinite
+   Loops/N plus one half
+   Loops/Nested
+   Loops/While
+   Loops/with multiple ranges
+   Loops/Wrong ranges
+
+
+
+
+Reference
+
+ For loop Wikipedia.
+
+",#TypeScript,TypeScript,"for (let i: number = 0; i < 5; ++i) {
+    let line: string = """"
+    for(let j: number = 0; j <= i; ++j) {
+        line += ""*""
+    }
+    console.log(line)
+}
+ ",157,8
+42453,http://rosettacode.org/wiki/Least_common_multiple,Least common multiple,"Least common multiple
+
+You are encouraged to solve this task according to the task description, using any language you may know.
+Task
+
+Compute the   least common multiple   (LCM)   of two integers.
+
+Given   m   and   n,   the least common multiple is the smallest positive integer that has both   m   and   n   as factors.
+
+
+
+Example
+
+The least common multiple of   12   and   18   is   36,       because:
+
+   12   is a factor     (12 × 3 = 36),     and 
+   18   is a factor     (18 × 2 = 36),     and 
+   there is no positive integer less than   36   that has both factors. 
+
+
+As a special case,   if either   m   or   n   is zero,   then the least common multiple is zero.
+
+
+
+One way to calculate the least common multiple is to iterate all the multiples of   m,   until you find one that is also a multiple of   n.
+
+If you already have   gcd   for greatest common divisor,   then this formula calculates   lcm.
+
+
+
+ 
+
+
+
+lcm
+⁡
+(
+m
+,
+n
+)
+=
+
+
+
+
+|
+
+m
+×
+n
+
+|
+
+
+
+gcd
+⁡
+(
+m
+,
+n
+)
+
+
+
+
+
+{\displaystyle \operatorname {lcm} (m,n)={\frac {|m\times n|}{\operatorname {gcd} (m,n)}}}
+
+
+
+
+One can also find   lcm   by merging the prime decompositions of both   m   and   n.
+
+
+
+Related task
+   greatest common divisor.
+
+
+See also
+
+   MathWorld entry:   Least Common Multiple.
+   Wikipedia entry:   Least common multiple.
+
+",#TypeScript,TypeScript,"// Least common multiple
+ 
+function gcd(m: number, n: number): number {
+  var tmp: number;
+  while (m != 0) {
+    tmp = m;
+    m = n % m;
+    n = tmp;
+  }
+  return n;
+}
+ 
+function lcm(m: number, n: number): number {
+    return Math.floor(m / gcd(m, n)) * n;
+} 
+ 
+console.log(`LCM(35, 21) = ${lcm(35, 21)}`);
+ ",309,18
+42585,http://rosettacode.org/wiki/Levenshtein_distance,Levenshtein distance,"
+
+ This page uses content from Wikipedia. The original article was at Levenshtein distance. The list of authors can be seen in the page history. As with Rosetta Code, the text of Wikipedia is available under the GNU FDL. (See links for details on variance)
+
+
+
+In information theory and computer science, the Levenshtein distance is a metric for measuring the amount of difference between two sequences (i.e. an edit distance). The Levenshtein distance between two strings is defined as the minimum number of edits needed to transform one string into the other, with the allowable edit operations being insertion, deletion, or substitution of a single character.
+
+
+
+Example
+
+The Levenshtein distance between ""kitten"" and ""sitting"" is 3, since the following three edits change one into the other, and there isn't a way to do it with fewer than three edits:
+
+   kitten   sitten   (substitution of 'k' with 's')
+   sitten   sittin   (substitution of 'e' with 'i')
+   sittin   sitting   (insert 'g' at the end).
+
+The Levenshtein distance between   ""rosettacode"",   ""raisethysword""   is   8.
+
+The distance between two strings is same as that when both strings are reversed.
+
+
+
+Task
+
+Implements a Levenshtein distance function, or uses a library function, to show the Levenshtein distance between   ""kitten""   and   ""sitting"".
+
+
+
+Related task
+
+   Longest common subsequence
+
+
+
+Other tasks related to string operations:
+
+Metrics
+ Array length
+ String length
+ Copy a string
+ Empty string  (assignment)
+Counting
+ Word frequency
+ Letter frequency
+ Jewels and stones
+ I before E except after C
+ Bioinformatics/base count
+ Count occurrences of a substring
+ Count how many vowels and consonants occur in a string
+Remove/replace
+ XXXX redacted
+ Conjugate a Latin verb
+ Remove vowels from a string
+ String interpolation (included)
+ Strip block comments
+ Strip comments from a string
+ Strip a set of characters from a string
+ Strip whitespace from a string -- top and tail
+ Strip control codes and extended characters from a string
+Anagrams/Derangements/shuffling
+ Word wheel
+ ABC problem
+ Sattolo cycle
+ Knuth shuffle
+ Ordered words
+ Superpermutation minimisation
+ Textonyms (using a phone text pad)
+ Anagrams
+ Anagrams/Deranged anagrams
+ Permutations/Derangements
+Find/Search/Determine
+ ABC words
+ Odd words
+ Word ladder
+ Semordnilap
+ Word search
+ Wordiff  (game)
+ String matching
+ Tea cup rim text
+ Alternade words
+ Changeable words
+ State name puzzle
+ String comparison
+ Unique characters
+ Unique characters in each string
+ Extract file extension
+ Levenshtein distance
+ Palindrome detection
+ Common list elements
+ Longest common suffix
+ Longest common prefix
+ Compare a list of strings 
+ Longest common substring
+ Find common directory path
+ Words from neighbour ones
+ Change e letters to i in words
+ Non-continuous subsequences
+ Longest common subsequence
+ Longest palindromic substrings
+ Longest increasing subsequence
+ Words containing ""the"" substring
+ Sum of the digits of n is substring of n
+ Determine if a string is numeric
+ Determine if a string is collapsible
+ Determine if a string is squeezable
+ Determine if a string has all unique characters
+ Determine if a string has all the same characters
+ Longest substrings without repeating characters
+ Find words which contains all the vowels
+ Find words which contains most consonants
+ Find words which contains more than 3 vowels
+ Find words which first and last three letters are equals
+ Find words which odd letters are consonants and even letters are vowels or vice_versa
+Formatting
+ Substring
+ Rep-string
+ Word wrap
+ String case
+ Align columns
+ Literals/String
+ Repeat a string
+ Brace expansion
+ Brace expansion using ranges
+ Reverse a string
+ Phrase reversals
+ Comma quibbling
+ Special characters
+ String concatenation
+ Substring/Top and tail
+ Commatizing numbers
+ Reverse words in a string
+ Suffixation of decimal numbers
+ Long literals, with continuations 
+ Numerical and alphabetical suffixes
+ Abbreviations, easy
+ Abbreviations, simple
+ Abbreviations, automatic
+Song lyrics/poems/Mad Libs/phrases
+ Mad Libs
+ Magic 8-ball
+ 99 Bottles of Beer
+ The Name Game (a song)
+ The Old lady swallowed a fly
+ The Twelve Days of Christmas
+Tokenize
+ Text between
+ Tokenize a string
+ Word break problem
+ Tokenize a string with escaping
+ Split a character string based on change of character
+Sequences
+ Show ASCII table
+ De Bruijn sequences
+ Self-referential sequences
+ Generate lower case ASCII alphabet
+
+
+
+",#TypeScript,TypeScript," 
+  function levenshtein(a: string, b: string): number {
+    const m: number = a.length,
+      n: number = b.length;
+    let t: number[] = [...Array(n + 1).keys()],
+      u: number[] = [];
+    for (let i: number = 0; i < m; i++) {
+      u = [i + 1];
+      for (let j: number = 0; j < n; j++) {
+        u[j + 1] = a[i] === b[j] ? t[j] : Math.min(t[j], t[j + 1], u[j]) + 1;
+      }
+      t = u;
+    }
+    return u[n];
+  }
+ 
+ ",423,17
+45754,http://rosettacode.org/wiki/Josephus_problem,Josephus problem,"Josephus problem is a math puzzle with a grim description: 
+
+
+
+n
+
+
+{\displaystyle n}
+
+ prisoners are standing on a circle, sequentially numbered from 
+
+
+
+0
+
+
+{\displaystyle 0}
+
+ to 
+
+
+
+n
+−
+1
+
+
+{\displaystyle n-1}
+
+.
+
+An executioner walks along the circle, starting from prisoner 
+
+
+
+0
+
+
+{\displaystyle 0}
+
+,
+removing every 
+
+
+
+k
+
+
+{\displaystyle k}
+
+-th prisoner and killing him.
+
+As the process goes on, the circle becomes smaller and smaller, until only one prisoner remains, who is then freed. >
+
+For example, if there are 
+
+
+
+n
+=
+5
+
+
+{\displaystyle n=5}
+
+ prisoners and 
+
+
+
+k
+=
+2
+
+
+{\displaystyle k=2}
+
+, the order the prisoners are killed in (let's call it the ""killing sequence"") will be 1, 3, 0, and 4, and the survivor will be #2.
+
+
+
+Task
+
+Given any   
+
+
+
+n
+,
+k
+>
+0
+
+
+{\displaystyle n,k>0}
+
+,   find out which prisoner will be the final survivor.
+
+In one such incident, there were 41 prisoners and every 3rd prisoner was being killed   (
+
+
+
+k
+=
+3
+
+
+{\displaystyle k=3}
+
+).
+
+Among them was a clever chap name Josephus who worked out the problem, stood at the surviving position, and lived on to tell the tale.
+
+Which number was he?
+
+
+
+Extra
+
+The captors may be especially kind and let 
+
+
+
+m
+
+
+{\displaystyle m}
+
+ survivors free,
+
+and Josephus might just have   
+
+
+
+m
+−
+1
+
+
+{\displaystyle m-1}
+
+   friends to save.
+
+Provide a way to calculate which prisoner is at any given position on the killing sequence.
+
+
+
+Notes
+
+ You can always play the executioner and follow the procedure exactly as described, walking around the circle, counting (and cutting off) heads along the way. This would yield the complete killing sequence and answer the above questions, with a complexity of probably 
+
+
+
+O
+(
+k
+n
+)
+
+
+{\displaystyle O(kn)}
+
+. However, individually it takes no more than 
+
+
+
+O
+(
+m
+)
+
+
+{\displaystyle O(m)}
+
+ to find out which prisoner is the 
+
+
+
+m
+
+
+{\displaystyle m}
+
+-th to die.
+ If it's more convenient, you can number prisoners from   
+
+
+
+1
+
+
+{\displaystyle 1}
+
+ to 
+
+
+
+n
+
+
+{\displaystyle n}
+
+   instead.   If you choose to do so, please state it clearly.
+ An alternative description has the people committing assisted suicide instead of being executed, and the last person simply walks away. These details are not relevant, at least not mathematically.
+
+",#TypeScript,TypeScript,"function josephus(n: number, k: number): number {
+  if (!n) {
+    return 1;
+  }
+ 
+  return ((josephus(n - 1, k) + k - 1) % n) + 1;
+}",132,7
+47516,http://rosettacode.org/wiki/Identity_matrix,Identity matrix,"Task
+
+Build an   identity matrix   of a size known at run-time.
+
+
+
+An identity matrix is a square matrix of size n × n,
+
+where the diagonal elements are all 1s (ones),
+
+and all the other elements are all 0s (zeroes).
+
+
+
+
+
+
+
+I
+
+n
+
+
+=
+
+
+[
+
+
+
+1
+
+
+0
+
+
+0
+
+
+⋯
+
+
+0
+
+
+
+
+0
+
+
+1
+
+
+0
+
+
+⋯
+
+
+0
+
+
+
+
+0
+
+
+0
+
+
+1
+
+
+⋯
+
+
+0
+
+
+
+
+⋮
+
+
+⋮
+
+
+⋮
+
+
+⋱
+
+
+⋮
+
+
+
+
+0
+
+
+0
+
+
+0
+
+
+⋯
+
+
+1
+
+
+
+]
+
+
+
+
+{\displaystyle I_{n}={\begin{bmatrix}1&0&0&\cdots &0\\0&1&0&\cdots &0\\0&0&1&\cdots &0\\\vdots &\vdots &\vdots &\ddots &\vdots \\0&0&0&\cdots &1\\\end{bmatrix}}}
+
+
+
+
+
+Related tasks
+
+   Spiral matrix
+   Zig-zag matrix 
+   Ulam_spiral_(for_primes)
+
+",#TypeScript,TypeScript," 
+function identity(n) {
+    if (n < 1) return ""Not defined"";
+    else if (n == 1) return 1;
+    else {
+        var idMatrix:number[][];
+        for (var i: number = 0; i < n; i++) {
+            for (var j: number = 0; j < n; j++) {
+                if (i != j) idMatrix[i][j] = 0;
+                else idMatrix[i][j] = 1;
+            }            
+        }
+        return idMatrix;
+    }
+}
+ ",392,16
+50258,http://rosettacode.org/wiki/Haversine_formula,Haversine formula,"
+
+ This page uses content from Wikipedia. The original article was at Haversine formula. The list of authors can be seen in the page history. As with Rosetta Code, the text of Wikipedia is available under the GNU FDL. (See links for details on variance)
+
+
+
+The haversine formula is an equation important in navigation, giving great-circle distances between two points on a sphere from their longitudes and latitudes.
+
+It is a special case of a more general formula in spherical trigonometry, the law of haversines, relating the sides and angles of spherical ""triangles"".
+
+
+
+Task
+
+Implement a great-circle distance function, or use a library function,
+to show the great-circle distance between:
+
+ Nashville International Airport (BNA)   in Nashville, TN, USA,   which is: 
+   N 36°7.2',   W 86°40.2'     (36.12,   -86.67)           -and-
+
+ Los Angeles International Airport (LAX)  in Los Angeles, CA, USA,   which is:
+   N 33°56.4',  W 118°24.0'    (33.94,  -118.40)   
+
+
+
+User Kaimbridge clarified on the Talk page:
+
+ -- 6371.0 km is the authalic radius based on/extracted from surface area;
+ -- 6372.8 km is an approximation of the radius of the average circumference
+    (i.e., the average great-elliptic or great-circle radius), where the
+     boundaries are the meridian (6367.45 km) and the equator (6378.14 km).
+
+Using either of these values results, of course, in differing distances:
+
+ 6371.0 km -> 2886.44444283798329974715782394574671655 km;
+ 6372.8 km -> 2887.25995060711033944886005029688505340 km;
+ (results extended for accuracy check:  Given that the radii are only
+  approximations anyways, .01' ≈ 1.0621333 km and .001"" ≈ .00177 km,
+  practical precision required is certainly no greater than about
+  .0000001——i.e., .1 mm!)
+
+As distances are segments of great circles/circumferences, it is
+recommended that the latter value (r = 6372.8 km) be used (which
+most of the given solutions have already adopted, anyways). 
+
+Most of the examples below adopted Kaimbridge's recommended value of
+6372.8 km for the earth radius. However, the derivation of this
+ellipsoidal quadratic mean radius
+is wrong (the averaging over azimuth is biased). When applying these
+examples in real applications, it is better to use the
+mean earth radius,
+6371 km. This value is recommended by the International Union of
+Geodesy and Geophysics and it minimizes the RMS relative error between the
+great circle and geodesic distance.
+
+
+
+
+
+",#TypeScript,TypeScript," 
+let radians = function (degree: number) {
+ 
+    // degrees to radians
+    let rad: number = degree * Math.PI / 180;
+ 
+    return rad;
+}
+ 
+export const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+ 
+    // var dlat: number, dlon: number, a: number, c: number, R: number;
+    let dlat, dlon, a, c, R: number;
+ 
+    R = 6372.8; // km
+    dlat = radians(lat2 - lat1);
+    dlon = radians(lon2 - lon1);
+    lat1 = radians(lat1);
+    lat2 = radians(lat2);
+    a = Math.sin(dlat / 2) * Math.sin(dlat / 2) + Math.sin(dlon / 2) * Math.sin(dlon / 2) * Math.cos(lat1) * Math.cos(lat2)
+    c = 2 * Math.asin(Math.sqrt(a));
+    return R * c;
+}
+ 
+console.log(""Distance:"" + haversine(36.12, -86.67, 33.94, -118.40));
+ ",733,26
+50568,http://rosettacode.org/wiki/Gray_code,Gray code,"Gray code
+Karnaugh maps
+Create functions to encode a number to and decode a number from Gray code.
+
+Display the normal binary representations, Gray code representations, and decoded Gray code values for all 5-bit binary numbers (0-31 inclusive, leading 0's not necessary).
+
+There are many possible Gray codes. The following encodes what is called ""binary reflected Gray code.""
+
+Encoding (MSB is bit 0, b is binary, g is Gray code):
+
+if b[i-1] = 1
+   g[i] = not b[i]
+else
+   g[i] = b[i]
+Or:
+
+g = b xor (b logically right shifted 1 time)
+Decoding (MSB is bit 0, b is binary, g is Gray code):
+
+b[0] = g[0]
+
+for other bits:
+b[i] = g[i] xor b[i-1]
+Reference
+ Converting Between Gray and Binary Codes. It includes step-by-step animations.",#TypeScript,TypeScript,"// Gray code
+ 
+function encode(v: number): number {
+  return v ^ (v >> 1);
+}
+ 
+function decode(v: number): number {
+  var result = 0;
+  while (v > 0) {
+    result ^= v;
+    v >>= 1;
+  }
+  return result;
+}
+ 
+console.log(""decimal  binary   gray    decoded"");
+for (var i = 0; i <= 31; i++) {
+  var g = encode(i);
+  var d = decode(g);
+  process.stdout.write(
+    ""  "" + i.toString().padStart(2, "" "") + 
+    ""     "" + i.toString(2).padStart(5, ""0"") + 
+    ""   "" + g.toString(2).padStart(5, ""0"") + 
+    ""   "" + d.toString(2).padStart(5, ""0"") + 
+    ""  "" + d.toString().padStart(2, "" ""));
+  console.log();
+} 
+ ",603,28
+51526,http://rosettacode.org/wiki/Greatest_common_divisor,Greatest common divisor,"Greatest common divisor
+
+You are encouraged to solve this task according to the task description, using any language you may know.
+Task
+
+Find the greatest common divisor   (GCD)   of two integers.
+
+
+Greatest common divisor   is also known as   greatest common factor (gcf)   and   greatest common measure.
+
+
+
+Related task
+
+   least common multiple.
+
+
+See also
+
+   MathWorld entry:   greatest common divisor.
+   Wikipedia entry:     greatest common divisor.
+
+",#TypeScript,TypeScript,"function gcd(a: number, b: number) {
+  a = Math.abs(a);
+  b = Math.abs(b);
+ 
+  if (b > a) {
+    let temp = a;
+    a = b;
+    b = temp; 
+  }
+ 
+  while (true) {
+    a %= b;
+    if (a === 0) { return b; }
+    b %= a;
+    if (b === 0) { return a; }
+  }
+}",250,17
+52566,http://rosettacode.org/wiki/Fractal_tree,Fractal tree,"Generate and draw a fractal tree.
+
+ Draw the trunk
+ At the end of the trunk, split by some angle and draw two branches
+ Repeat at the end of each branch until a sufficient level of branching is reached
+
+
+Related tasks
+ Pythagoras Tree
+
+",#TypeScript,TypeScript,"// Set up canvas for drawing
+var canvas: HTMLCanvasElement = document.createElement('canvas')
+canvas.width = 600
+canvas.height = 500
+document.body.appendChild(canvas)
+var ctx: CanvasRenderingContext2D = canvas.getContext('2d')
+ctx.fillStyle = '#000'
+ctx.lineWidth = 1
+ 
+// constants
+const degToRad: number = Math.PI / 180.0
+const totalDepth: number = 9
+ 
+/** Helper function that draws a line on the canvas */
+function drawLine(x1: number, y1: number, x2: number, y2: number): void {
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y2)
+}
+ 
+/** Draws a branch at the given point and angle and then calls itself twice */
+function drawTree(x1: number, y1: number, angle: number, depth: number): void {
+    if (depth !== 0) {
+        let x2: number = x1 + (Math.cos(angle * degToRad) * depth * 10.0)
+        let y2: number = y1 + (Math.sin(angle * degToRad) * depth * 10.0)
+        drawLine(x1, y1, x2, y2)
+        drawTree(x2, y2, angle - 20, depth - 1)
+        drawTree(x2, y2, angle + 20, depth - 1)
+    }
+}
+ 
+// actual drawing of tree
+ctx.beginPath()
+drawTree(300, 500, -90, totalDepth)
+ctx.closePath()
+ctx.stroke()
+ 
+ ",1113,37
+52642,http://rosettacode.org/wiki/Function_composition,Function composition,"Task
+
+Create a function, compose,   whose two arguments   f   and   g,   are both functions with one argument.
+
+
+
+The result of compose is to be a function of one argument, (lets call the argument   x),   which works like applying function    f    to the result of applying function    g    to    x.
+
+
+
+Example
+
+ compose(f, g) (x) = f(g(x))
+
+
+
+Reference: Function composition
+
+Hint: In some languages, implementing compose correctly requires creating a closure.
+
+
+
+",#TypeScript,TypeScript," 
+function compose<T, U, V> (fn1: (input: T) => U, fn2: (input: U) => V){
+    return function(value: T) {
+        return fn2(fn1(value))
+    } 
+}
+ 
+function size (s: string): number { return s.length; }
+ 
+function isEven(x: number): boolean { return x % 2 === 0; }
+ 
+const evenSize = compose(size, isEven);
+ 
+console.log(evenSize(""ABCD"")) // true
+console.log(evenSize(""ABC"")) // false
+ ",386,16
+60695,http://rosettacode.org/wiki/Ethiopian_multiplication,Ethiopian multiplication,"Ethiopian multiplication is a method of multiplying integers using only addition, doubling, and halving.
+
+
+Method:
+
+ Take two numbers to be multiplied and write them down at the top of two columns.
+ In the left-hand column repeatedly halve the last number, discarding any remainders, and write the result below the last in the same column, until you write a value of 1.
+ In the right-hand column repeatedly double the last number and write the result below. stop when you add a result in the same row as where the left hand column shows 1.
+ Examine the table produced and discard any row where the value in the left column is even.
+ Sum the values in the right-hand column that remain to produce the result of multiplying the original two numbers together
+
+For example:   17 × 34
+
+       17    34
+
+Halving the first column:
+
+       17    34
+        8
+        4
+        2
+        1
+
+Doubling the second column:
+
+       17    34
+        8    68
+        4   136 
+        2   272
+        1   544
+
+Strike-out rows whose first cell is even:
+
+       17    34
+        8    68 
+        4   136 
+        2   272 
+        1   544
+
+Sum the remaining numbers in the right-hand column:
+
+       17    34
+        8    -- 
+        4   --- 
+        2   --- 
+        1   544
+           ====
+            578
+
+So 17 multiplied by 34, by the Ethiopian method is 578.
+
+
+
+Task
+
+The task is to define three named functions/methods/procedures/subroutines:
+
+ one to halve an integer,
+ one to double an integer, and
+ one to state if an integer is even.
+
+
+Use these functions to create a function that does Ethiopian multiplication.
+
+
+
+References
+
+Ethiopian multiplication explained (BBC Video clip)
+A Night Of Numbers - Go Forth And Multiply (Video)
+Russian Peasant Multiplication
+Programming Praxis: Russian Peasant Multiplication
+
+",#TypeScript,TypeScript," 
+// Ethiopian multiplication
+ 
+function intToString(n: number, wdth: number): string {
+  sn = Math.floor(n).toString();
+  len = sn.length;
+  return (wdth < len ? ""#"".repeat(wdth) : "" "".repeat(wdth - len) + sn);
+}
+ 
+function double(a: number): number {
+  return 2 * a;
+}
+ 
+function halve(a: number): number {
+  return Math.floor(a / 2);
+}
+ 
+function isEven(a: number): bool { 
+  return a % 2 == 0;
+}
+ 
+function showEthiopianMultiplication(x: number, y: number): void {
+  var tot = 0;
+  while (x >= 1) {
+    process.stdout.write(intToString(x, 9) + "" "");
+    if (!isEven(x)) {
+      tot += y;
+      process.stdout.write(intToString(y, 9));
+    }
+    console.log();
+    x = halve(x);
+    y = double(y);
+  }  
+  console.log(""="" + "" "".repeat(9) + intToString(tot, 9));
+}
+ 
+showEthiopianMultiplication(17, 34);
+ ",807,38
+61557,http://rosettacode.org/wiki/Diversity_prediction_theorem,Diversity prediction theorem,"The   wisdom of the crowd   is the collective opinion of a group of individuals rather than that of a single expert.
+
+Wisdom-of-the-crowds research routinely attributes the superiority of crowd averages over individual judgments to the elimination of individual noise,   an explanation that assumes independence of the individual judgments from each other.
+
+Thus the crowd tends to make its best decisions if it is made up of diverse opinions and ideologies.
+
+
+
+Scott E. Page introduced the diversity prediction theorem:
+
+ The squared error of the collective prediction equals the average squared error minus the predictive diversity. 
+
+
+Therefore,   when the diversity in a group is large,   the error of the crowd is small.
+
+
+
+Definitions
+
+   Average Individual Error:   Average of the individual squared errors
+   Collective Error:   Squared error of the collective prediction
+   Prediction Diversity:   Average squared distance from the individual predictions to the collective prediction
+   Diversity Prediction Theorem:   Given a crowd of predictive models,     then
+   Collective Error   =   Average Individual Error   ─   Prediction Diversity
+Task
+
+For a given   true   value and a number of number of estimates (from a crowd),   show   (here on this page):
+
+   the true value   and   the crowd estimates
+   the average error
+   the crowd error
+   the prediction diversity
+
+
+Use   (at least)   these two examples:
+
+   a true value of   49   with crowd estimates of:    48   47   51
+   a true value of   49   with crowd estimates of:    48   47   51   42
+
+
+Also see
+
+   Wikipedia entry:   Wisdom of the crowd
+   University of Michigan: PDF paper         (exists on a web archive,   the Wayback Machine).
+
+",#TypeScript,TypeScript," 
+function sum(array: Array<number>): number {
+    return array.reduce((a, b) => a + b)
+}
+ 
+function square(x : number) :number {
+    return x * x
+}
+ 
+function mean(array: Array<number>): number {
+    return sum(array) / array.length
+}
+ 
+function averageSquareDiff(a: number, predictions: Array<number>): number {
+    return mean(predictions.map(x => square(x - a)))
+}
+ 
+function diversityTheorem(truth: number, predictions: Array<number>): Object {
+    const average: number = mean(predictions)
+    return {
+        ""average-error"": averageSquareDiff(truth, predictions),
+        ""crowd-error"": square(truth - average),
+        ""diversity"": averageSquareDiff(average, predictions)
+    }
+}
+ 
+console.log(diversityTheorem(49, [48,47,51]))
+console.log(diversityTheorem(49, [48,47,51,42]))
+ ",788,29
+62948,http://rosettacode.org/wiki/Digital_root,Digital root,"The digital root, 
+
+
+
+X
+
+
+{\displaystyle X}
+
+, of a number, 
+
+
+
+n
+
+
+{\displaystyle n}
+
+, is calculated:
+
+ find 
+
+
+
+X
+
+
+{\displaystyle X}
+
+ as the sum of the digits of 
+
+
+
+n
+
+
+{\displaystyle n}
+
+
+ find a new 
+
+
+
+X
+
+
+{\displaystyle X}
+
+ by summing the digits of 
+
+
+
+X
+
+
+{\displaystyle X}
+
+, repeating until 
+
+
+
+X
+
+
+{\displaystyle X}
+
+ has only one digit.
+The additive persistence is the number of summations required to obtain the single digit.
+
+The task is to calculate the additive persistence and the digital root of a number, e.g.:
+
+
+
+
+
+627615
+
+
+{\displaystyle 627615}
+
+ has additive persistence 
+
+
+
+2
+
+
+{\displaystyle 2}
+
+ and digital root of 
+
+
+
+9
+
+
+{\displaystyle 9}
+
+;
+
+
+
+
+39390
+
+
+{\displaystyle 39390}
+
+ has additive persistence 
+
+
+
+2
+
+
+{\displaystyle 2}
+
+ and digital root of 
+
+
+
+6
+
+
+{\displaystyle 6}
+
+;
+
+
+
+
+588225
+
+
+{\displaystyle 588225}
+
+ has additive persistence 
+
+
+
+2
+
+
+{\displaystyle 2}
+
+ and digital root of 
+
+
+
+3
+
+
+{\displaystyle 3}
+
+;
+
+
+
+
+393900588225
+
+
+{\displaystyle 393900588225}
+
+ has additive persistence 
+
+
+
+2
+
+
+{\displaystyle 2}
+
+ and digital root of 
+
+
+
+9
+
+
+{\displaystyle 9}
+
+;
+The digital root may be calculated in bases other than 10.
+
+
+
+See
+
+ Casting out nines for this wiki's use of this procedure.
+ Digital root/Multiplicative digital root
+ Sum digits of an integer
+ Digital root sequence on OEIS
+ Additive persistence sequence on OEIS
+ Iterated digits squaring
+
+",#TypeScript,TypeScript,"// Digital root
+ 
+function rootAndPers(n: number, bas: number): [number, number] {
+  var pers = 0;
+  while (n >= bas)
+  {
+    var s = 0;
+    do
+    {
+      s += n % bas;
+      n = Math.floor(n / bas);
+    } while (n > 0);
+    pers++;
+    n = s;
+  }
+  return [n, pers];
+}
+ 
+function intToString(n: number, wdth: number): string {
+  sn = (Math.floor(n)).toString();
+  len = sn.length;
+  return (wdth < len ? ""#"".repeat(wdth) : "" "".repeat(wdth - len) + sn);
+}
+ 
+for (var a of [1, 14, 267, 8128, 39390, 588225, 627615])
+{
+  var rp = rootAndPers(a, 10);
+  console.log(intToString(a, 7) + 
+    intToString(rp[1], 6) + intToString(rp[0], 6));
+}  
+ ",641,31
+63138,http://rosettacode.org/wiki/Department_numbers,Department numbers,"There is a highly organized city that has decided to assign a number to each of their departments:
+
+   police department
+   sanitation department
+   fire department 
+
+
+Each department can have a number between   1   and   7   (inclusive).
+
+The three department numbers are to be unique (different from each other) and must add up to   12.
+
+The Chief of the Police doesn't like odd numbers and wants to have an even number for his department.
+
+
+
+Task
+
+Write a computer program which outputs all valid combinations.
+
+
+
+Possible output   (for the 1st and 14th solutions):
+
+ --police--  --sanitation--  --fire-- 
+     2             3            7 
+     6             5            1
+
+
+",#TypeScript,TypeScript," 
+// Department numbers
+console.log(`POLICE SANITATION FIRE`);
+let f: number;
+for (var p = 2; p <= 7; p += 2) {
+  for (var s = 1; s <= 7; s++) {
+    if (s != p) {      
+      f = (12 - p) - s;
+      if ((f > 0) && (f <= 7) && (f != s) && (f != p))
+        console.log(`   ${p}       ${s}       ${f}`);
+    }
+  }
+}
+ ",315,14
+64974,http://rosettacode.org/wiki/Day_of_the_week,Day of the week,"A company decides that whenever Xmas falls on a Sunday they will give their workers all extra paid holidays so that, together with any public holidays, workers will not have to work the following week (between the 25th of December and the first of January).
+
+
+
+Task
+
+In what years between 2008 and 2121 will the 25th of December be a Sunday?
+
+Using any standard date handling libraries of your programming language;
+compare the dates calculated with the output of other languages to discover any anomalies in the handling of dates which may be due to, for example, overflow in types used to represent dates/times similar to   y2k   type problems.
+
+
+
+",#TypeScript,TypeScript," 
+// Find years with Sunday Christmas
+var f = 2008;
+var t = 2121;
+console.log(`Sunday Christmases ${f} - ${t}`);
+for (y = f; y <= t; y++) {
+  var x = (y * 365) + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 6;
+  if (x % 7 == 0)
+    process.stdout.write(`${y}\t`);
+}
+process.stdout.write(""\n"");
+ ",314,12
+71200,http://rosettacode.org/wiki/Catalan_numbers,Catalan numbers,"Catalan numbers
+
+You are encouraged to solve this task according to the task description, using any language you may know.
+
+
+Catalan numbers are a sequence of numbers which can be defined directly:
+
+
+
+
+
+
+C
+
+n
+
+
+=
+
+
+1
+
+n
++
+1
+
+
+
+
+
+
+(
+
+
+
+2
+n
+
+n
+
+
+)
+
+
+
+=
+
+
+
+(
+2
+n
+)
+!
+
+
+(
+n
++
+1
+)
+!
+
+n
+!
+
+
+
+
+
+ for 
+
+n
+≥
+0.
+
+
+{\displaystyle C_{n}={\frac {1}{n+1}}{2n \choose n}={\frac {(2n)!}{(n+1)!\,n!}}\qquad {\mbox{ for }}n\geq 0.}
+
+
+Or recursively:
+
+
+
+
+
+
+C
+
+0
+
+
+=
+1
+
+
+and
+
+
+
+C
+
+n
++
+1
+
+
+=
+
+∑
+
+i
+=
+0
+
+
+n
+
+
+
+C
+
+i
+
+
+
+
+C
+
+n
+−
+i
+
+
+
+
+for 
+
+n
+≥
+0
+;
+
+
+{\displaystyle C_{0}=1\quad {\mbox{and}}\quad C_{n+1}=\sum _{i=0}^{n}C_{i}\,C_{n-i}\quad {\text{for }}n\geq 0;}
+
+
+Or alternatively (also recursive):
+
+
+
+
+
+
+C
+
+0
+
+
+=
+1
+
+
+and
+
+
+
+C
+
+n
+
+
+=
+
+
+
+2
+(
+2
+n
+−
+1
+)
+
+
+n
++
+1
+
+
+
+
+C
+
+n
+−
+1
+
+
+,
+
+
+{\displaystyle C_{0}=1\quad {\mbox{and}}\quad C_{n}={\frac {2(2n-1)}{n+1}}C_{n-1},}
+
+
+
+
+Task
+
+Implement at least one of these algorithms and print out the first 15 Catalan numbers with each.
+
+Memoization   is not required, but may be worth the effort when using the second method above.
+
+
+
+Related tasks
+
+Catalan numbers/Pascal's triangle
+Evaluate binomial coefficients
+
+",#TypeScript,TypeScript," 
+// Catalan numbers
+var c: number[] = [1];
+console.log(`${0}\t${c[0]}`);
+for (n = 0; n < 15; n++) {
+  c[n + 1] = 0;
+  for (i = 0; i <= n; i++)
+    c[n + 1] = c[n + 1] + c[i] * c[n - i];
+  console.log(`${n + 1}\t${c[n + 1]}`);
+} 
+ ",231,11
+71643,http://rosettacode.org/wiki/Caesar_cipher,Caesar cipher,"
+
+Task
+
+Implement a Caesar cipher, both encoding and decoding. 
+
+The key is an integer from 1 to 25.
+
+This cipher rotates (either towards left or right) the letters of the alphabet (A to Z).
+
+The encoding replaces each letter with the 1st to 25th next letter in the alphabet (wrapping Z to A).
+
+So key 2 encrypts ""HI"" to ""JK"", but key 20 encrypts ""HI"" to ""BC"".
+
+This simple ""mono-alphabetic substitution cipher"" provides almost no security, because an attacker who has the encoded message can either use frequency analysis to guess the key, or just try all 25 keys.
+
+Caesar cipher is identical to Vigenère cipher with a key of length 1. 
+
+Also, Rot-13 is identical to Caesar cipher with key 13.
+
+
+
+Related tasks
+
+ Rot-13
+ Substitution Cipher
+ Vigenère Cipher/Cryptanalysis
+
+",#TypeScript,TypeScript,"function replace(input: string, key: number) : string {
+	return input.replace(/([a-z])/g, 
+		($1) => String.fromCharCode(($1.charCodeAt(0) + key + 26 - 97) % 26 + 97)
+		).replace(/([A-Z])/g, 
+		($1) => String.fromCharCode(($1.charCodeAt(0) + key + 26 - 65) % 26 + 65));
+}
+ 
+// test
+var str = 'The five boxing wizards jump quickly';
+var encoded = replace(str, 3);
+var decoded = replace(encoded, -3);
+ 
+console.log('Enciphered: ' + encoded);
+console.log('Deciphered: ' + decoded);",478,14
+74448,http://rosettacode.org/wiki/AVL_tree,AVL tree,"
+
+ This page uses content from Wikipedia. The original article was at AVL tree. The list of authors can be seen in the page history. As with Rosetta Code, the text of Wikipedia is available under the GNU FDL. (See links for details on variance)
+
+
+
+In computer science, an AVL tree is a self-balancing binary search tree. In an AVL tree, the heights of the two child subtrees of any node differ by at most one; at no time do they differ by more than one because rebalancing is done ensure this is the case. Lookup, insertion, and deletion all take O(log n) time in both the average and worst cases, where n is the number of nodes in the tree prior to the operation. Insertions and deletions may require the tree to be rebalanced by one or more tree rotations. Note the tree of nodes comprise a set, so duplicate node keys are not allowed.
+
+AVL trees are often compared with red-black trees because they support the same set of operations and because red-black trees also take O(log n) time for the basic operations. Because AVL trees are more rigidly balanced, they are faster than red-black trees for lookup-intensive applications. Similar to red-black trees, AVL trees are height-balanced, but in general not weight-balanced nor μ-balanced; that is, sibling nodes can have hugely differing numbers of descendants.
+
+
+
+Task
+
+Implement an AVL tree in the language of choice, and provide at least basic operations.
+
+
+
+",#TypeScript,TypeScript,"/** A single node in an AVL tree */
+class AVLnode <T> {
+    balance: number
+    left: AVLnode<T>
+    right: AVLnode<T>
+ 
+    constructor(public key: T, public parent: AVLnode<T> = null) {
+        this.balance = 0
+        this.left = null
+        this.right = null
+    }
+}
+ 
+/** The balanced AVL tree */
+class AVLtree <T> {
+    // public members organized here
+    constructor() {
+        this.root = null
+    }
+ 
+    insert(key: T): boolean {
+        if (this.root === null) {
+            this.root = new AVLnode<T>(key)
+        } else {
+            let n: AVLnode<T> = this.root,
+                parent: AVLnode<T> = null
+ 
+            while (true) {
+                if(n.key === key) {
+                    return false
+                }
+ 
+                parent = n
+ 
+                let goLeft: boolean = n.key > key
+                n = goLeft ? n.left : n.right
+ 
+                if (n === null) {
+                    if (goLeft) {
+                        parent.left = new AVLnode<T>(key, parent)
+                    } else {
+                        parent.right = new AVLnode<T>(key, parent)
+                    }
+ 
+                    this.rebalance(parent)
+                    break
+                }
+            }
+        }
+ 
+        return true
+    }
+ 
+    deleteKey(delKey: T): void {
+        if (this.root === null) {
+            return
+        }
+ 
+        let n: AVLnode<T> = this.root,
+            parent: AVLnode<T> = this.root,
+            delNode: AVLnode<T> = null,
+            child: AVLnode<T> = this.root
+ 
+        while (child !== null) {
+            parent = n
+            n = child
+            child = delKey >= n.key ? n.right : n.left
+            if (delKey === n.key) {
+                delNode = n
+            }
+        }
+ 
+        if (delNode !== null) {
+            delNode.key = n.key
+ 
+            child = n.left !== null ? n.left : n.right
+ 
+            if (this.root.key === delKey) {
+                this.root = child
+            } else {
+                if (parent.left === n) {
+                    parent.left = child
+                } else {
+                    parent.right = child
+                }
+ 
+                this.rebalance(parent)
+            }
+        }
+    }
+ 
+    treeBalanceString(n: AVLnode<T> = this.root): string {
+        if (n !== null) {
+            return `${this.treeBalanceString(n.left)} ${n.balance} ${this.treeBalanceString(n.right)}`
+        }
+        return """"
+    }
+ 
+    toString(n: AVLnode<T> = this.root): string {
+        if (n !== null) {
+            return `${this.toString(n.left)} ${n.key} ${this.toString(n.right)}`
+        }
+        return """"
+    }
+ 
+ 
+    // private members organized here
+    private root: AVLnode<T>
+ 
+    private rotateLeft(a: AVLnode<T>): AVLnode<T> {
+        let b: AVLnode<T> = a.right
+        b.parent = a.parent
+        a.right = b.left
+ 
+        if (a.right !== null) {
+            a.right.parent = a
+        }
+ 
+        b.left = a
+        a.parent = b
+ 
+        if (b.parent !== null) {
+            if (b.parent.right === a) {
+                b.parent.right = b
+            } else {
+                b.parent.left = b
+            }
+        }
+ 
+        this.setBalance(a)
+        this.setBalance(b)
+ 
+        return b
+    }
+ 
+    private rotateRight(a: AVLnode<T>): AVLnode<T> {
+        let b: AVLnode<T> = a.left
+        b.parent = a.parent
+        a.left = b.right
+ 
+        if (a.left !== null) {
+            a.left.parent = a
+        }
+ 
+        b.right = a
+        a.parent = b
+ 
+        if (b.parent !== null) {
+            if (b.parent.right === a) {
+                b.parent.right = b
+            } else {
+                b.parent.left = b
+            }
+        }
+ 
+        this.setBalance(a)
+        this.setBalance(b)
+ 
+        return b
+    }
+ 
+    private rotateLeftThenRight(n: AVLnode<T>): AVLnode<T> {
+        n.left = this.rotateLeft(n.left)
+        return this.rotateRight(n)
+    }
+ 
+    private rotateRightThenLeft(n: AVLnode<T>): AVLnode<T> {
+        n.right = this.rotateRight(n.right)
+        return this.rotateLeft(n)
+    }
+ 
+    private rebalance(n: AVLnode<T>): void {
+        this.setBalance(n)
+ 
+        if (n.balance === -2) {
+            if(this.height(n.left.left) >= this.height(n.left.right)) {
+                n = this.rotateRight(n)
+            } else {
+                n = this.rotateLeftThenRight(n)
+            }
+        } else if (n.balance === 2) {
+            if(this.height(n.right.right) >= this.height(n.right.left)) {
+                n = this.rotateLeft(n)
+            } else {
+                n = this.rotateRightThenLeft(n)
+            }
+        }
+ 
+        if (n.parent !== null) {
+            this.rebalance(n.parent)
+        } else {
+            this.root = n
+        }
+    }
+ 
+    private height(n: AVLnode<T>): number {
+        if (n === null) {
+            return -1
+        }
+        return 1 + Math.max(this.height(n.left), this.height(n.right))
+    }
+ 
+    private setBalance(n: AVLnode<T>): void {
+        n.balance = this.height(n.right) - this.height(n.left)
+    }
+ 
+    public showNodeBalance(n: AVLnode<T>): string {
+        if (n !== null) {
+            return `${this.showNodeBalance(n.left)} ${n.balance} ${this.showNodeBalance(n.right)}`
+        }
+        return """"
+    }
+}
+ ",5240,214
+75359,http://rosettacode.org/wiki/Averages/Arithmetic_mean,Averages/Arithmetic mean,"Task[edit]
+Write a program to find the mean (arithmetic average) of a numeric vector.
+
+In case of a zero-length input, since the mean of an empty set of numbers is ill-defined, the program may choose to behave in any way it deems appropriate, though if the programming language has an established convention for conveying math errors or undefined values, it's preferable to follow it.
+
+See also
+Tasks for calculating statistical measures
+
+
+
+in one go
+moving (sliding window)
+moving (cumulative)
+
+Mean
+Arithmetic
+
+Statistics/Basic
+Averages/Arithmetic mean
+Averages/Pythagorean means
+
+
+Averages/Simple moving average
+
+
+
+
+Geometric
+
+Averages/Pythagorean means
+
+
+
+
+Harmonic
+
+Averages/Pythagorean means
+
+
+
+
+Quadratic
+
+Averages/Root mean square
+
+
+
+
+Circular
+
+Averages/Mean angle
+Averages/Mean time of day
+
+
+
+
+Median
+
+Averages/Median
+
+
+
+
+Mode
+
+Averages/Mode
+
+
+
+
+Standard deviation
+
+Statistics/Basic
+
+
+
+Cumulative standard deviation
+
+
+
+
+
+",#TypeScript,TypeScript," 
+function mean(numbersArr)
+{
+    let arrLen = numbersArr.length;
+    if (arrLen > 0) {
+        let sum: number = 0;
+        for (let i of numbersArr) {
+            sum += i;
+        }
+        return sum/arrLen;
+    }
+    else return ""Not defined"";
+}
+ 
+alert( mean( [1,2,3,4,5] ) );   
+alert( mean( [] ) );        
+ ",316,17
+75444,http://rosettacode.org/wiki/Balanced_brackets,Balanced brackets,"Task:
+
+ Generate a string with   N   opening brackets   [   and with   N   closing brackets   ],   in some arbitrary order. 
+ Determine whether the generated string is balanced; that is, whether it consists entirely of pairs of opening/closing brackets (in that order), none of which mis-nest.
+
+
+Examples
+
+   (empty)      OK
+   []           OK   
+   [][]         OK   
+   [[][]]       OK 
+   ][         NOT OK
+   ][][       NOT OK
+   []][[]     NOT OK
+
+
+",#TypeScript,TypeScript,"// Balanced brackets
+ 
+function isStringBalanced(str: string): bool {
+  var paired = 0;
+  for (var i = 0; i < str.length && paired >= 0; i++) {
+    var c = str.charAt(i);
+    if (c == '[')
+      paired++;
+    else if (c == ']')
+      paired--;
+  }
+  return (paired == 0);
+}
+ 
+function generate(n: number): string {
+  var opensCount = 0, closesCount = 0;
+  // Choose at random until n of one type generated
+  var generated: string[] = new Array(); // Works like StringBuilder
+  while (opensCount < n && closesCount < n) {
+    if (Math.floor(Math.random() * 2) == 0) {
+      ++opensCount;
+      generated.push(""["");
+    } else {
+      ++closesCount;
+      generated.push(""]"");
+    }
+  }
+  // Now pad with the remaining other brackets
+  generated.push(opensCount == n ? 
+    ""]"".repeat(n - closesCount) :
+    ""["".repeat(n - opensCount));
+  return generated.join("""");
+} 
+ 
+console.log(""Supplied examples"");
+var tests: string[] = ["""", ""[]"", ""]["", ""[][]"", ""][]["", ""[[][]]"", ""[]][[]""];
+for (var test of tests)
+  console.log(`The string '${test}' is ${(isStringBalanced(test) ? ""OK."" : ""not OK.""));
+console.log();
+console.log(""Random generated examples"");
+for (var example = 0; example < 10; example++) {
+  var test = generate(Math.floor(Math.random() * 10) + 1);
+  console.log(`The string '${test}' is ${(isStringBalanced(test) ? ""OK."" : ""not OK."")}`);
+} 
+ ",1350,45
+76893,http://rosettacode.org/wiki/Almost_prime,Almost prime,"A   k-Almost-prime   is a natural number   
+
+
+
+n
+
+
+{\displaystyle n}
+
+   that is the product of   
+
+
+
+k
+
+
+{\displaystyle k}
+
+   (possibly identical) primes.
+
+
+
+Example
+
+1-almost-primes,   where   
+
+
+
+k
+=
+1
+
+
+{\displaystyle k=1}
+
+,   are the prime numbers themselves.
+
+2-almost-primes,   where   
+
+
+
+k
+=
+2
+
+
+{\displaystyle k=2}
+
+,   are the   semiprimes.
+
+
+
+Task
+
+Write a function/method/subroutine/... that generates k-almost primes and use it to create a table here of the first ten members of k-Almost primes for   
+
+
+
+1
+<=
+K
+<=
+5
+
+
+{\displaystyle 1<=K<=5}
+
+.
+
+
+
+Related tasks
+
+   Semiprime
+   Category:Prime Numbers
+
+",#TypeScript,TypeScript,"// Almost prime
+ 
+function isKPrime(n: number, k: number): bool {
+  var f = 0;
+  for (var i = 2; i <= n; i++)
+    while (n % i == 0) {
+      if (f == k) 
+        return false;
+      ++f;
+      n = Math.floor(n / i);
+    }
+  return f == k;
+}
+ 
+for (var k = 1; k <= 5; k++) {
+  process.stdout.write(`k = ${k}:`);
+  var i = 2, c = 0;
+  while (c < 10) {
+    if (isKPrime(i, k)) {
+      process.stdout.write("" "" + i.toString().padStart(3, ' '));
+      ++c;
+    }
+    ++i;
+  }
+  console.log();
+}
+ ",491,27
+77239,"http://rosettacode.org/wiki/Abundant,_deficient_and_perfect_number_classifications","Abundant, deficient and perfect number classifications","These define three classifications of positive integers based on their   proper divisors.
+
+Let   P(n)   be the sum of the proper divisors of   n   where the proper divisors are all positive divisors of   n   other than   n   itself.
+
+   if    P(n) <  n    then  n  is classed as  deficient  (OEIS A005100).
+   if    P(n) == n    then  n  is classed as  perfect    (OEIS A000396).
+   if    P(n) >  n    then  n  is classed as  abundant   (OEIS A005101).
+
+
+
+Example
+
+6   has proper divisors of   1,   2,   and   3.
+
+1 + 2 + 3 = 6,   so   6   is classed as a perfect number.
+
+
+
+Task
+
+Calculate how many of the integers   1   to   20,000   (inclusive) are in each of the three classes.
+
+Show the results here.
+
+
+
+Related tasks
+
+   Aliquot sequence classifications.   (The whole series from which this task is a subset.)
+   Proper divisors
+   Amicable pairs
+
+",#TypeScript,TypeScript,"function integer_classification(){
+	var sum:number=0, i:number,j:number;
+	var try:number=0;
+	var number_list:number[]={1,0,0};
+	for(i=2;i<=20000;i++){
+		try=i/2;
+		sum=1;
+		for(j=2;j<try;j++){
+			if (i%j)
+				continue;
+			try=i/j;
+			sum+=j;
+			if (j!=try)
+				sum+=try;
+		}
+		if (sum<i){
+			number_list[d]++;
+			continue;
+		}
+		else if (sum>i){
+			number_list[a]++;
+			continue;
+		}
+		number_list[p]++;
+	}
+	console.log('There are '+number_list[d]+ ' deficient , ' + 'number_list[p] + ' perfect and '+ number_list[a]+ ' abundant numbers
+between 1 and 20000');
+}
+",562,29
+78982,http://rosettacode.org/wiki/A%2BB,A+B,"A+B   ─── a classic problem in programming contests,   it's given so contestants can gain familiarity with the online judging system being used.
+
+
+
+Task
+
+Given two integers,   A and B.
+
+Their sum needs to be calculated.
+
+
+
+Input data
+
+Two integers are written in the input stream, separated by space(s):
+
+ 
+
+
+
+(
+−
+1000
+≤
+A
+,
+B
+≤
++
+1000
+)
+
+
+{\displaystyle (-1000\leq A,B\leq +1000)}
+
+
+
+
+Output data
+
+The required output is one integer:   the sum of A and B.
+
+
+
+Example
+
+
+
+ input  
+
+ output  
+
+
+ 2 2 
+
+ 4 
+
+
+ 3 2 
+
+ 5 
+
+
+",#TypeScript,TypeScript,"function add(a: number, b: number) {
+return a+b;
+}
+",51,4
