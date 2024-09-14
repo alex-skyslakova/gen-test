@@ -1,11 +1,17 @@
-import openai
+import os
 
-from testing.helpers import simplify
-from testing.language import LanguageEnum
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+from helpers import simplify
+from language import LanguageEnum
 
 from log_conversations import log_conversation
 
-openai.api_key = ""
 
 
 def generate_test_gpt35(name, code, suffix):
@@ -44,35 +50,33 @@ def generate_test_gpt_chat(name: str, code: str, model: str = "gpt-4-turbo", lan
          "content": "You are a developer tasked with writing unit tests based on provided code."},
         {"role": "user",
          "content": "Provide complete, ready-to-use test code covering all use cases. If tests can't be written, respond with 'None'. Code " +
-                    simplify(name) + str(lang.value) if lang else "" + ": " + code},
+                    simplify(name) + (str(lang.value) if lang else "") + ": " + code},
     ]
-    completion = openai.ChatCompletion.create(
-        model=model,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        messages=messages
-    )
-    log_conversation(model, temperature, messages, completion.choices[0].message, lang.name if lang else "")
+    completion = client.chat.completions.create(model=model,
+    temperature=temperature,
+    max_tokens=max_tokens,
+    messages=messages)
+    log_conversation(model, temperature, messages, completion.choices[0].message.content, lang.name if lang else "")
 
-    if completion is not None:
-        print(completion.choices[0].message)
-        gpt_response = completion.choices[0].message
-        test = gpt_response["content"].split(lang.name + '\n')[1].split('```')[0] if "```{}".format(lang.name) in gpt_response[
-            "content"] else None
-        return test
+    try:
+        if completion is not None:
+            print(completion.choices[0].message)
+            gpt_response = completion.choices[0].message
+            test = gpt_response.content.split(lang.name.lower() + '\n')[1].split('```')[0] if "```{}".format(
+                lang.name.lower()) in gpt_response.content else None
+            return test
+        return None
+    except Exception as e:
+        print("Failed to parse task " + simplify(name) + ", error occured: " + str(e))
+        return None
+
 
 
 def generate_test_codex(name: str, code: str, lang: LanguageEnum = None, temperature: float = 0.2):
     model = "davinci-002"
-    max_tokens = 6450
     prompt = "You are a developer tasked with writing unit tests based on provided code. Provide complete, ready-to-use test code covering all use cases. If tests can't be written, respond with 'None'. Code " + simplify(name) + ".py: " + code
 
-    completion = openai.Completion.create(
-        engine=model,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        prompt=prompt
-    )
+    completion = client.completions.create(model=model, prompt=prompt)
     print(completion)
     log_conversation(model, temperature, prompt, completion.choices[0].text, lang.name if lang else "")
 
