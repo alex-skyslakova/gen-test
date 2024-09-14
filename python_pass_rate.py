@@ -61,7 +61,7 @@ def run_tests_and_compute_pass_rate(test_directory):
         'total_tests': total_tests,
         'passed_tests': test_result.passed,
         'failed_tests': test_result.failed,
-        'pass_percentage': pass_percentage
+        'pass_percentage': round(pass_percentage, 2)
     }
 
 # Example usage:
