@@ -7,3 +7,5 @@ class Model(Enum):
     GPT_4o = 3
     GPT_4o_mini = 4
     GEMINI_1_5_pro = 5
+    GEMINI_1_5_flash = 6
+    DEEPSEEK_CODER = 7
