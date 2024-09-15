@@ -2,6 +2,8 @@ import json
 import os
 from datetime import datetime
 
+from helpers import simplify
+
 CONVERSATION_DIR = "./conversations/"
 
 def log_conversation(model, temperature, messages, output, lang, dir=CONVERSATION_DIR):
@@ -19,7 +21,8 @@ def log_conversation(model, temperature, messages, output, lang, dir=CONVERSATIO
     }
 
     # Check if the conversations.json file exists
-    filepath = os.path.join(dir, "{}_{}_conversations.json".format(lang, model))
+    filepath = os.path.join(dir, "{}_{}_conversations.json".format(lang, simplify(model)))
+
     if os.path.exists(filepath):
         # Open the file in read mode to load existing data
         with open(filepath, "r") as file:
@@ -29,24 +32,14 @@ def log_conversation(model, temperature, messages, output, lang, dir=CONVERSATIO
                 conversations = []  # If file is empty or corrupt, start with empty list
     else:
         # If the file doesn't exist, create an empty list
+        os.makedirs(dir, exist_ok=True)
+
         conversations = []
 
     # Append the new conversation entry to the list
     conversations.append(conversation_entry)
 
     # Open the file in write mode and dump the updated list
-    with open(filepath, "w") as file:
+    with open(filepath, "a") as file:
         json.dump(conversations, file, indent=4)
 
-
-# Example usage
-model = "gpt-3.5-turbo"
-temperature = 0.2
-messages = [
-    {"role": "system", "content": "You are a developer tasked with writing unit tests based on provided code."},
-    {"role": "user",
-     "content": "Provide complete, ready-to-use test code covering all use cases. Code: def add(a, b): return a + b"}
-]
-output = {"tests": "def test_add(): assert add(2, 3) == 5"}  # Simulated output from OpenAI
-
-log_conversation_with_model(model, temperature, messages, output, "./conversations/", "Python")
