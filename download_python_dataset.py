@@ -112,6 +112,7 @@ def main():
         # Compute code length and line count
         filtered_df['code_length'] = filtered_df['code'].str.len()
         filtered_df['line_count'] = filtered_df['code'].apply(lambda x: len(x.split('\n')))
+        
         if l == "Python":
             filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: check_syntax_string(x.replace('\u00A0', ' ')))
         if l == "Java":
@@ -122,6 +123,7 @@ def main():
         # Sort the dataframe by line count
         dict_per_language[l] = filtered_df.sort_values(by=['task_name'], ascending=False).head(200)
 
+
         # Save the filtered dataframe to a CSV file
         filtered_df.to_csv(os.path.join(STATS_DIR, "test_filtered_" + l + ".csv"))
 
@@ -129,7 +131,6 @@ def main():
     #generate_tests(model, dict_per_language[LanguageEnum.Java.name], LanguageEnum.Java)
     #df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/filtered_Python_stats_davinci_002.csv")
     #run_analysis(LanguageEnum.Python, df, "davinci_002")
-
 
 def generate_tests(model, df, lang):
     if model == Model.GPT_3_5_turbo:
@@ -153,6 +154,7 @@ def generate_tests(model, df, lang):
     elif model == Model.DEEPSEEK_CODER:
         model_string = "deepseek_coder"
         generate = generate_test_deepseek_coder
+
     else:
         raise ValueError("Invalid model specified.")
 
@@ -171,7 +173,7 @@ def generate_tests(model, df, lang):
         if generated is None:
             print("could not parse, skipping")
             generated_codes.append(None)
-            filenames.append(None)
+
         else:
             # replace non parsable space character
             parsed_code = generated.replace('\u00A0', ' ')
@@ -203,17 +205,19 @@ def run_analysis_java(df, model_string):
     errors = run_checkstyle(java_file)
     NotImplemented()
 
-
+    
 def run_analysis_python(df, model_string):
     compilation_statuses = []
     line_coverages = []
     branch_coverages = []
+
     pylint_error_count = []
     pylint_findings = []
     pass_percentages = []
 
     for index, row in df.copy(deep=True).iterrows():
         filename = row['file_path']
+
         print("Filename: ", filename)
 
         if isinstance(filename, float):
@@ -231,6 +235,7 @@ def run_analysis_python(df, model_string):
 
         file = Path(filename).name.replace("test_" + model_string + "_", "")
         print(file)
+
 
         if compilation_status == CompileStatus.OK:
             try:
@@ -315,3 +320,4 @@ if __name__ == '__main__':
         #generated_df = generate_tests(model, filtered[language.name], language)
         generated_df = read_csv("data/generated/stats/filtered_Python_stats_gpt_4o_2024_08_06.csv")
         run_analysis_python(generated_df, "gpt_4o_2024_08_06")
+

@@ -13,7 +13,6 @@ from language import LanguageEnum
 from log_conversations import log_conversation
 
 
-
 def generate_test_gpt35(name, code, suffix):
     '''
      GPT-3.5 Turbo models can understand and generate natural language or code and have been optimized for chat
@@ -71,12 +70,13 @@ def generate_test_gpt_chat(name: str, code: str, model: str = "gpt-4-turbo", lan
         return None
 
 
-
 def generate_test_codex(name: str, code: str, lang: LanguageEnum = None, temperature: float = 0.2):
     model = "davinci-002"
+
     prompt = "You are a developer tasked with writing unit tests based on provided code. Provide complete, ready-to-use test code covering all use cases. If tests can't be written, respond with 'None'. Code " + simplify(name) + ".py: " + code
 
     completion = client.completions.create(model=model, prompt=prompt)
+
     print(completion)
     log_conversation(model, temperature, prompt, completion.choices[0].text, lang.name if lang else "")
 

@@ -22,6 +22,7 @@ def log_conversation(model, temperature, messages, output, lang, dir=CONVERSATIO
 
     # Check if the conversations.json file exists
     filepath = os.path.join(dir, "{}_{}_conversations.json".format(lang, simplify(model)))
+
     if os.path.exists(filepath):
         # Open the file in read mode to load existing data
         with open(filepath, "r") as file:
@@ -32,6 +33,7 @@ def log_conversation(model, temperature, messages, output, lang, dir=CONVERSATIO
     else:
         # If the file doesn't exist, create an empty list
         os.makedirs(dir, exist_ok=True)
+
         conversations = []
 
     # Append the new conversation entry to the list

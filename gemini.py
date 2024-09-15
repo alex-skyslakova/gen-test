@@ -14,6 +14,7 @@ GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
 
 
 def generate_test_gemini_1_5_pro(name, code, lang):
+
     try:
         genai.configure(api_key=GEMINI_API_KEY)
 
@@ -38,3 +39,4 @@ def generate_test_gemini_1_5_flash(name, code, lang):
         return test
     except Exception as e:
         print("Failed to generate test: ", e)
+

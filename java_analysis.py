@@ -1,3 +1,4 @@
+
 CHECKSTYLE_JAR_PATH = "./checkstyle-10.18.1-all.jar"
 CHECKSTYLE_CONFIG = "./checkstyle-config.xml"
 
