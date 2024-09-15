@@ -23,7 +23,7 @@ def timeout(seconds=60, error_message="Test execution timed out"):
     return decorator
 
 @timeout(seconds=60)
-def run_tests_and_compute_pass_rate(test_directory):
+def run_tests_and_compute_pass_rate(test_file):
     """
     Runs tests in the specified directory, computes the number of passed tests,
     total tests, and the percentage of passed tests.
@@ -52,7 +52,23 @@ def run_tests_and_compute_pass_rate(test_directory):
 
     test_result = TestResult()
 
-    pytest.main([test_directory, "--tb=short", "-q"], plugins=[test_result])
+    # pytest.main([test_directory, "--tb=short", "-q", "--timeout=30"], plugins=[test_result])
+
+    # Define a timeout handler
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Test execution exceeded the 30-second limit.")
+
+    # Set the timeout handler to trigger after 30 seconds
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(30)
+
+    try:
+        # Run all tests in a specific test file (replace 'test_file.py' with your file name)
+        pytest.main([test_file, "--tb=short", "-q"], plugins=[test_result])
+    finally:
+        # Disable the alarm
+        signal.alarm(0)
+
 
     total_tests = test_result.passed + test_result.failed
     pass_percentage = (test_result.passed / total_tests) * 100 if total_tests > 0 else 0
@@ -65,4 +81,6 @@ def run_tests_and_compute_pass_rate(test_directory):
     }
 
 # Example usage:
-test_directory = "path/to/your/tests_directory"
+test_directory = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/python/abundant_odd_numbers/test_gpt_3_5_turbo_abundant_odd_numbers.py"
+print(run_tests_and_compute_pass_rate(test_directory))
+

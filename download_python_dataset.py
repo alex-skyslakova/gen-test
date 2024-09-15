@@ -1,43 +1,101 @@
+import functools
+import models
 import os.path
 from pathlib import Path
 
 from datasets import load_dataset
-
-from coverage_computation import get_coverage
+from pandas import read_csv
+from python_coverage_computation import get_coverage
 from deepseek import generate_test_deepseek_coder
 from gemini import generate_test_gemini_1_5_pro, generate_test_gemini_1_5_flash
+from go_validation import validate_go_code_with_build
 from gpt import generate_test_codex, generate_test_gpt35, generate_test_gpt4o_mini, generate_test_gpt4o
 from helpers import save_generated_test, save_content
 from java_analysis import run_checkstyle
 from java_validation import validate_java_code
+from kotlin_validation import validate_kotlin_code
 from language import LanguageEnum
 from models import Model
+from python_pass_rate import run_tests_and_compute_pass_rate
 from python_pylint_check import pylint_check, get_warnings_errors_fatals_count
-from python_validation import check_syntax, CompileStatus
+from python_validation import CompileStatus, check_syntax_string, check_syntax_file
 
-LANGUAGES_TO_KEEP = {"Python", "Java", "JavaScript", "Kotlin", "Go"}
+LANGUAGES_TO_KEEP = {"Python", "Java", "Kotlin", "Go"}
 
-GENERATED_DIR="./data/generated/java/"
-STATS_DIR="./data/stats"
-
-def check_syntax_1(code_string):
-    try:
-        compile(code_string, '<string>', 'exec')
-        return True
-    except SyntaxError as e:
-        print(e)
-        return False
+GENERATED_DIR="./data/generated/go/"
+STATS_DIR="./data/generated/stats/"
 
 
+def download_and_validate_dataset():
+    ds = load_dataset("christopher/rosetta-code")
+    train_df = ds.data['train'].to_pandas()
+
+    lang_dfs = {}
+    for l in LANGUAGES_TO_KEEP:
+        lang_df = train_df[train_df['language_name'] == l]
+        lang_dfs[l] = lang_df
+
+    # Update the PATH inside the script
+    os.environ["PATH"] += os.pathsep + "/usr/local/go/bin"
+
+    dict_per_language = {}
+    for l, filtered_df in lang_dfs.items():
+        filtered_df['code_length'] = filtered_df['code'].str.len()
+        filtered_df['line_count'] = filtered_df['code'].apply(lambda x: len(x.split('\n')))
+        if l == "Python":
+            filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: check_syntax_string(x.replace('\u00A0', ' ')))
+        if l == "Java":
+            filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: validate_java_code(x.replace('\u00A0', ' ')))
+        if l == "Kotlin":
+            filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: validate_kotlin_code(x.replace('\u00A0', ' ')))
+        if l == "Go":
+            filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: validate_go_code_with_build(x.replace('\u00A0', ' ')))
+
+        filtered_df.to_csv("raw_" + l.lower() + "_dataset.csv")
+
+        # Print the statistics of the "code_syntax" column
+        syntax_stats = filtered_df["code_syntax"].value_counts()
+
+        # Print the results
+        print("Code Syntax Statistics: " + l + ":")
+        for status, count in syntax_stats.items():
+            print(f"{status}: {count} occurrences")
+
+        # Optionally, you could print percentages as well
+        total = filtered_df["code_syntax"].count()
+        print("\nCode Syntax Percentage Statistics:")
+        for status, count in syntax_stats.items():
+            percentage = (count / total) * 100
+            print(f"{status}: {percentage:.2f}%")
+
+
+        dict_per_language[l] = filtered_df[filtered_df["code_syntax"] == CompileStatus.OK]
+
+def filter_dataset(dict_per_language, size=200):
+    common_tasks = functools.reduce(
+        lambda x, y: x & y,  # set intersection
+        [set(df['task_name']) for df in dict_per_language.values()]  # list of task_name sets for each language
+    )
+
+    filtered_dict = {}
+    for l, df in dict_per_language.items():
+        filtered_dict[l] = df[df['task_name'].isin(common_tasks)]
+        filtered_dict[l] = filtered_dict[l].sort_values(by=['task_name']).head(size)
+        filtered_dict[l].to_csv(os.path.join(STATS_DIR, "test_filtered_" + l + ".csv"))
+    return filtered_dict
 
 def main():
     ds = load_dataset("christopher/rosetta-code")
     train_df = ds.data['train'].to_pandas()
+    # common_tasks = functools.reduce(
+    #     lambda x, y: x & y,  # set intersection
+    #     [set(df['task_name']) for df in filtered_dfs.values()]  # list of task_name sets for each language
+    # )
 
-    filtered_dfs = {}
+    lang_dfs = {}
     for l in LANGUAGES_TO_KEEP:
-        filtered_df = train_df[train_df['language_name'] == l]
-        filtered_dfs[l] = filtered_df
+        lang_df = train_df[train_df['language_name'] == l]
+        lang_dfs[l] = lang_df
 
     # common_tasks = functools.reduce(
     #     lambda x, y: x & y,  # set intersection
@@ -45,7 +103,7 @@ def main():
     # )
 
     dict_per_language = {}
-    for l, filtered_df in filtered_dfs.items():
+    for l, filtered_df in lang_dfs.items():
         # Keep only the rows where the task_name is in the common tasks
         #filtered_df = filtered_df[filtered_df['task_name'].isin(common_tasks)]
 
@@ -55,11 +113,9 @@ def main():
         filtered_df['code_length'] = filtered_df['code'].str.len()
         filtered_df['line_count'] = filtered_df['code'].apply(lambda x: len(x.split('\n')))
         if l == "Python":
-            filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: check_syntax_1(x.replace('\u00A0', ' ')))
-
+            filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: check_syntax_string(x.replace('\u00A0', ' ')))
         if l == "Java":
             filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: validate_java_code(x.replace('\u00A0', ' ')))
-
         if l == "Kotlin":
             filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: validate_kotlin_code(x.replace('\u00A0', ' ')))
 
@@ -111,7 +167,6 @@ def generate_tests(model, df, lang):
             generated_codes.append(None)
             filenames.append(None)
 
-
         generated = generate(task_name, code, lang)
         if generated is None:
             print("could not parse, skipping")
@@ -122,15 +177,15 @@ def generate_tests(model, df, lang):
             parsed_code = generated.replace('\u00A0', ' ')
             generated_codes.append(parsed_code)
 
-            save_content(task_name, code)
-            filename = save_generated_test(task_name, model_string, parsed_code)
+            save_content(task_name, code.replace('\u00A0', ' '), lang.value)
+            filename = save_generated_test(task_name, model_string, parsed_code, lang.value)
 
             filenames.append(filename)
 
     df["generated_code"] = generated_codes
     df["file_path"] = filenames
     df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)))
-
+    return df
     # df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/test_filtered_Python_stats_gpt_3_5_turbo.csv")
     #run_analysis(df, model_string)
     #run_analysis_python(df, model_string)
@@ -149,7 +204,6 @@ def run_analysis_java(df, model_string):
     NotImplemented()
 
 
-
 def run_analysis_python(df, model_string):
     compilation_statuses = []
     line_coverages = []
@@ -157,7 +211,6 @@ def run_analysis_python(df, model_string):
     pylint_error_count = []
     pylint_findings = []
     pass_percentages = []
-    code_compilation_statuses = []
 
     for index, row in df.copy(deep=True).iterrows():
         filename = row['file_path']
@@ -170,24 +223,21 @@ def run_analysis_python(df, model_string):
             line_coverages.append(None)
             pass_percentages.append(None)
             compilation_statuses.append(None)
-            code_compilation_statuses.append(None)
             continue
 
         print("Filename: ", filename)
-        compilation_status = check_syntax(filename)
+        compilation_status = check_syntax_file(filename)
         compilation_statuses.append(compilation_status)
 
         file = Path(filename).name.replace("test_" + model_string + "_", "")
         print(file)
-        compilation_status_code = check_syntax(os.path.join(os.path.dirname(filename), file))
-        code_compilation_statuses.append(compilation_status_code)
 
         if compilation_status == CompileStatus.OK:
             try:
                 directory = os.path.dirname(filename)
                 line_coverage = get_coverage(filename)
                 branch_coverage = get_coverage(filename, branch=True)
-                pass_percentage = None #run_tests_and_compute_pass_rate(directory)
+                pass_percentage = run_tests_and_compute_pass_rate(directory)
             except Exception as e:
                 print(e)
                 line_coverage = None
@@ -204,7 +254,6 @@ def run_analysis_python(df, model_string):
         branch_coverages.append(branch_coverage)
         line_coverages.append(line_coverage)
         pass_percentages.append(None if pass_percentage is None else pass_percentage["pass_percentage"])
-    df["code_syntax"] = code_compilation_statuses
     df["compilation_statuses"] = compilation_statuses
     df["line_coverages"] = line_coverages
     df["branch_coverages"] = branch_coverages
@@ -234,4 +283,35 @@ if __name__ == '__main__':
     #     "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/filtered_Python_stats_deepseek_coder.csv")
     #
     # run_analysis(LanguageEnum.Python, df, "deepseek_coder'")
-    main()
+
+
+
+    #dataset = download_and_validate_dataset()
+    # or
+    languages = []
+    dataset = {
+        "Python": read_csv("raw_python_dataset.csv"),
+        "Kotlin": read_csv("raw_kotlin_dataset.csv"),
+        "Java": read_csv("raw_java_dataset.csv"),
+        "Go": read_csv("raw_go_dataset.csv")
+    }
+
+    dataset_2 = {}
+    for l in ["Python", "Java", "Kotlin", "Go"]:
+        t = dataset[l].copy(deep = True)
+        t.info()
+        dataset_2[l] = t.loc[(t["code_syntax"] == "CompileStatus.OK") | (t["code_syntax"] == True)]
+
+    filtered = filter_dataset(dataset_2)
+
+    ALL = False
+    if ALL:
+        for l in languages:
+            for m in Model:
+                generate_tests(m, filtered[l.name], l)
+    else:
+        language = LanguageEnum.Python
+        model = Model.GPT_4o
+        #generated_df = generate_tests(model, filtered[language.name], language)
+        generated_df = read_csv("data/generated/stats/filtered_Python_stats_gpt_4o_2024_08_06.csv")
+        run_analysis_python(generated_df, "gpt_4o_2024_08_06")
