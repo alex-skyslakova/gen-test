@@ -6,7 +6,7 @@ import threading
 import time
 
 import pytest
-import coverage
+
 
 def run_pytest_with_timeout(filename, timeout=60):
     def run():
@@ -25,20 +25,9 @@ def timeout_handler(a, b):
 
 @pytest.mark.timeout(30, signal)  # Optional timeout for individual tests
 def get_coverage(filename, branch=False):
-    directory = os.path.dirname(filename)
+    print("==========COVERAGE")
 
-    # cov = coverage.Coverage(source=[directory], omit=[f'{directory}/**/test_*.py'], branch=branch)
-    # cov.start()
-    #
-    # try:
-    #     # Run pytest in the specified directory
-    #     pytest.main([directory, '--tb=short', "--timeout=30", '--timeout-method=signal', filename])
-    # except TimeoutError:
-    #     print("Test execution exceeded the time limit and was terminated")
-    # finally:
-    #
-    #     cov.stop()
-    #     cov.save()
+    directory = os.path.dirname(filename)
 
     if branch:
         args = ["pytest", directory, "--tb=short", "--timeout=30", "--timeout-method=signal",
@@ -53,7 +42,6 @@ def get_coverage(filename, branch=False):
         stderr=subprocess.PIPE
     )
 
-    # Monitor the time
     start_time = time.time()
 
     # Wait for the process to complete or terminate it if it exceeds the timeout
@@ -84,17 +72,7 @@ def get_coverage(filename, branch=False):
         print("Coverage report not found.")
         return None
 
-    # Calculate total lines and executed lines
-    total_lines = 0
-    executed_lines = 0
-
-    # for file in cov.get_data().measured_files():
-    #     print("Computing for " + file)
-    #     _, executable_lines, executed, _ = cov.analysis(file)
-    #     total_lines += len(executable_lines)
-    #     executed_lines += len(executed)
-
-    # Report coverage summary
+    print("==========COVERAGE END")
     return round(0, 2)
 
 if __name__ == '__main__':

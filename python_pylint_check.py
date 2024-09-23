@@ -2,15 +2,13 @@ import json
 import subprocess
 
 def run_pylint_and_collect_errors(filepath: str):
-    # Run pylint using subprocess
     result = subprocess.run(
         ['pylint', filepath, '-f', 'json'],  # Run pylint with JSON output format
-        stdout=subprocess.PIPE,  # Capture standard output
-        stderr=subprocess.PIPE,  # Capture standard error (if any)
-        text=True  # Decode output as a string
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
     )
 
-    # Parse the JSON output from pylint
     pylint_output = json.loads(result.stdout)
 
     return pylint_output

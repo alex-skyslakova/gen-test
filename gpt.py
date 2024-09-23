@@ -7,7 +7,7 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-from helpers import simplify
+from helpers import simplify, convert_to_filename
 from language import LanguageEnum
 
 from log_conversations import log_conversation
@@ -42,21 +42,30 @@ def generate_test_gpt4o(name, code, suffix):
     return generate_test_gpt_chat(name, code, "gpt-4o-2024-08-06", suffix)
 
 
-def generate_test_gpt_chat(name: str, code: str, model: str = "gpt-4-turbo", lang: LanguageEnum = None, temperature: float = 0.2):
-    max_tokens = 4000 if "3.5" in model else 8000
+def generate_test_gpt_chat(name: str, code: str, model: str, lang: LanguageEnum = None, temperature: float = 0.2):
+    filename = convert_to_filename(name, model, lang)
+    print("generating for {}".format(filename))
     messages = [
         {"role": "system",
          "content": "You are a developer tasked with writing unit tests based on provided code."},
         {"role": "user",
          "content": "Provide complete, ready-to-use test code covering all use cases. If tests can't be written, respond with 'None'. Code " +
-                    simplify(name) + (str(lang.value) if lang else "") + ": " + code},
+                    (filename if filename else "") + ": " + code},
     ]
     completion = client.chat.completions.create(model=model,
     temperature=temperature,
-    max_tokens=max_tokens,
     messages=messages)
-    log_conversation(model, temperature, messages, completion.choices[0].message.content, lang.name if lang else "")
-
+    log_conversation(
+        filename,
+        model,
+        temperature,
+        messages,
+        completion.choices[0].message.content,
+        lang.name if lang else "",
+        completion.usage.total_tokens,
+        completion.usage.prompt_tokens,
+        completion.usage.completion_tokens
+    )
     try:
         if completion is not None:
             print(completion.choices[0].message)
@@ -78,6 +87,15 @@ def generate_test_codex(name: str, code: str, lang: LanguageEnum = None, tempera
     completion = client.completions.create(model=model, prompt=prompt)
 
     print(completion)
-    log_conversation(model, temperature, prompt, completion.choices[0].text, lang.name if lang else "")
+    log_conversation(
+        model,
+        temperature,
+        prompt,
+        completion.choices[0].text,
+        lang.name if lang else "",
+        completion.usage.total_tokens,
+        completion.usage.prompt_tokens,
+        completion.usage.completion_tokens
+    )
 
     return completion.choices[0].text

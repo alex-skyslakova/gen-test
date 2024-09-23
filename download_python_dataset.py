@@ -10,7 +10,7 @@ from deepseek import generate_test_deepseek_coder
 from gemini import generate_test_gemini_1_5_pro, generate_test_gemini_1_5_flash
 from go_validation import validate_go_code_with_build
 from gpt import generate_test_codex, generate_test_gpt35, generate_test_gpt4o_mini, generate_test_gpt4o
-from helpers import save_generated_test, save_content
+from helpers import save_generated_test, save_content, read_generated_test
 from java_analysis import run_checkstyle
 from java_validation import validate_java_code
 from kotlin_validation import validate_kotlin_code
@@ -22,7 +22,7 @@ from python_validation import CompileStatus, check_syntax_string, check_syntax_f
 
 LANGUAGES_TO_KEEP = {"Python", "Java", "Kotlin", "Go"}
 
-GENERATED_DIR="./data/generated/go/"
+GENERATED_DIR= "data/generated/kotlin/"
 STATS_DIR="./data/generated/stats/"
 
 
@@ -36,7 +36,7 @@ def download_and_validate_dataset():
         lang_dfs[l] = lang_df
 
     # Update the PATH inside the script
-    os.environ["PATH"] += os.pathsep + "/usr/local/go/bin"
+    os.environ["PATH"] += os.pathsep + "/usr/local/golang/bin"
 
     dict_per_language = {}
     for l, filtered_df in lang_dfs.items():
@@ -164,23 +164,24 @@ def generate_tests(model, df, lang):
     for index, row in df.copy(deep=True).iterrows():
         task_name = row['task_name']
         code = row['code']
-        if len(code) > 20000:
-            print("TOO BIG, SKIPPING: ", task_name)
-            generated_codes.append(None)
-            filenames.append(None)
+        # if len(code) > 20000:
+        #     print("TOO BIG, SKIPPING: ", task_name)
+        #     generated_codes.append(None)
+        #     filenames.append(None)
 
-        generated = generate(task_name, code, lang)
+        generated = generate(task_name, code, lang) #read_generated_test(task_name, model_string, lang.value)
         if generated is None:
             print("could not parse, skipping")
             generated_codes.append(None)
+            filenames.append(None)
 
         else:
             # replace non parsable space character
             parsed_code = generated.replace('\u00A0', ' ')
             generated_codes.append(parsed_code)
 
-            save_content(task_name, code.replace('\u00A0', ' '), lang.value)
-            filename = save_generated_test(task_name, model_string, parsed_code, lang.value)
+            save_content(task_name, code.replace('\u00A0', ' '), lang)
+            filename = save_generated_test(task_name, model_string, parsed_code, lang)
 
             filenames.append(filename)
 
@@ -233,7 +234,7 @@ def run_analysis_python(df, model_string):
         compilation_status = check_syntax_file(filename)
         compilation_statuses.append(compilation_status)
 
-        file = Path(filename).name.replace("test_" + model_string + "_", "")
+        file = Path(filename).name.replace("test_" + model_string + "_", "") if filename is not None else None
         print(file)
 
 
@@ -252,13 +253,18 @@ def run_analysis_python(df, model_string):
             line_coverage = None
             branch_coverage = None
             pass_percentage = None
-
-        count, errors = pylint_check(filename)
-        pylint_findings.append(errors)
-        pylint_error_count.append(count)
+        try:
+            count, errors = pylint_check(filename)
+            pylint_findings.append(errors)
+            pylint_error_count.append(count)
+        except Exception as e:
+            print("exception occurred: ", e)
+            pylint_findings.append(None)
+            pylint_error_count.append(None)
         branch_coverages.append(branch_coverage)
         line_coverages.append(line_coverage)
         pass_percentages.append(None if pass_percentage is None else pass_percentage["pass_percentage"])
+
     df["compilation_statuses"] = compilation_statuses
     df["line_coverages"] = line_coverages
     df["branch_coverages"] = branch_coverages
@@ -266,9 +272,14 @@ def run_analysis_python(df, model_string):
     df["pylint_findings_count"] = pylint_error_count
     df["tests_pass_percentage"] = pass_percentages
 
+
+
     all_warnings, all_errors, all_fatals = [], [], []
     for findings in pylint_findings:
-        warnings, errors, fatals = get_warnings_errors_fatals_count(findings)
+        if findings is None:
+            warnings, errors, fatals = 0, 0 ,0
+        else:
+            warnings, errors, fatals = get_warnings_errors_fatals_count(findings)
         all_warnings.append(warnings)
         all_errors.append(errors)
         all_fatals.append(fatals)
@@ -277,7 +288,7 @@ def run_analysis_python(df, model_string):
     df["pylint_error_count"] = all_errors
     df["pylint_fatals_count"] = all_fatals
 
-    df.to_csv(os.path.join(STATS_DIR, "filtered_Python_stats_{}.csv".format(model_string)))
+    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(language.name, model_string)))
 
 #df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/filtered_Python_stats_davinci_002.csv")
 #run_analysis(LanguageEnum.Python, df, "davinci_002")
@@ -316,8 +327,8 @@ if __name__ == '__main__':
                 generate_tests(m, filtered[l.name], l)
     else:
         language = LanguageEnum.Python
-        model = Model.GPT_4o
-        #generated_df = generate_tests(model, filtered[language.name], language)
-        generated_df = read_csv("data/generated/stats/filtered_Python_stats_gpt_4o_2024_08_06.csv")
-        run_analysis_python(generated_df, "gpt_4o_2024_08_06")
+        model = Model.GPT_4o_mini
+        generated_df = generate_tests(model, filtered[language.name], language)
+        #generated_df = read_csv("data/generated/stats/filtered_Python_stats_davinci_002.csv")
+        #run_analysis_python(generated_df, "gpt_3_5_turbo")
 
