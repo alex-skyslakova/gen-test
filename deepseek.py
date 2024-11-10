@@ -12,7 +12,7 @@ client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.dee
 
 
 def generate_test_deepseek_coder(name, code, lang):
-    filename = convert_to_filename(name, 'deepseek-coder', lang)
+    filename = convert_to_filename(name, 'deepseek-coder', lang, data=code)
     model = "deepseek-coder"
     messages = [
         {"role": "system",
