@@ -1,5 +1,7 @@
 import subprocess
 
+from python_validation import CompileStatus
+
 
 def validate_kotlin_code(kotlin_code, kotlin_file='temp.kt'):
     # Write the Kotlin code to a temporary file
@@ -13,8 +15,8 @@ def validate_kotlin_code(kotlin_code, kotlin_file='temp.kt'):
     # Check if there are compilation errors
     if result.returncode == 0:
         print("Kotlin code is valid.")
-        return True
+        return CompileStatus.OK
     else:
         print("Kotlin code has errors:")
         print(result.stderr.decode())
-        return False
+        return CompileStatus.SYNTAX_ERROR

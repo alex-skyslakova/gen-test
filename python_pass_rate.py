@@ -105,7 +105,7 @@ def run_tests_and_compute_pass_rate(test_file, timeout=30):
             - 'pass_percentage': Percentage of tests that passed.
     """
     print("==========PASS RATE START")
-
+    duration = 0
     # Run pytest in the specified test file with subprocess
     args = ["pytest", test_file, "--tb=short", "-q", "--json-report"]
 
@@ -122,10 +122,12 @@ def run_tests_and_compute_pass_rate(test_file, timeout=30):
         if time.time() - start_time > timeout:
             process.terminate()
             print(f"Test execution exceeded {timeout} seconds and was terminated.")
-            return None
+            return None, True
         time.sleep(1)
 
+    exec_time = time.time() - start_time
     stdout, stderr = process.communicate()
+
 
     print(stdout.decode())
     print(stderr.decode())
@@ -146,11 +148,13 @@ def run_tests_and_compute_pass_rate(test_file, timeout=30):
                 'total_tests': total_tests,
                 'passed_tests': passed_tests,
                 'failed_tests': failed_tests,
-                'pass_percentage': round(pass_percentage, 2)
-            }
+                'pass_percentage': round(pass_percentage, 2),
+                'execution_time': exec_time,
+                'timeout': False
+            }, False
     else:
         print("Test report not found.")
-        return None
+        return None, False
 
 #
 # # Example usage:

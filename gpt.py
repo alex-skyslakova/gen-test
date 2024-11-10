@@ -43,7 +43,7 @@ def generate_test_gpt4o(name, code, suffix):
 
 
 def generate_test_gpt_chat(name: str, code: str, model: str, lang: LanguageEnum = None, temperature: float = 0.2):
-    filename = convert_to_filename(name, model, lang)
+    filename = convert_to_filename(name, model, lang, code)
     print("generating for {}".format(filename))
     messages = [
         {"role": "system",
