@@ -3,6 +3,8 @@ from pygments import lex
 from pygments.lexers.jvm import KotlinLexer
 from pygments.token import Token
 
+from loc_analysis import get_sloc
+
 kotlin_assertion_methods = [
     # JUnit assertions
     'assertEquals', 'assertNotEquals', 'assertTrue', 'assertFalse',
@@ -53,6 +55,12 @@ def assertions_mccabe_ratio_kotlin(code_file_path, test_file_path):
     print("assertions: ", assertions_count)
     print("complexity: ", complexity)
     return round(assertions_count / complexity) if complexity != 0 else None
+
+
+def assertions_density(file_path):
+    assertions_count = count_assertions_in_kotlin_file(file_path)
+    sloc = get_sloc(file_path)
+    return round(assertions_count / sloc, 2) if sloc != 0 else None
 
 
 if __name__ == "__main__":
