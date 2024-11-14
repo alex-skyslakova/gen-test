@@ -27,7 +27,7 @@ def count_assertions_in_python_file(filename):
     return counter.count
 
 
-def assertions_mccabe_ratio(codepath, testpath):
+def assertions_mccabe_ratio_python(codepath, testpath):
     result = lizard.analyze_file(codepath)
     complexity = sum([f.cyclomatic_complexity for f in result.function_list])
 
@@ -37,10 +37,11 @@ def assertions_mccabe_ratio(codepath, testpath):
     return round(assertions_count / complexity, 2) if complexity != 0 else None
 
 
-def assertions_density(filepath):
+def assertions_density_python(filepath):
     assertions_count = count_assertions_in_python_file(filepath)
     sloc = get_sloc(filepath)
     return round(assertions_count / sloc, 2) if sloc != 0 else None
 
-print(assertions_mccabe_ratio("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/python/angle_difference_between_two_bearings/angle_difference_between_two_bearings.py",
-                              "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/python/angle_difference_between_two_bearings/test_gpt_4o_2024_08_06_angle_difference_between_two_bearings.py"))
+
+#print(assertions_mccabe_ratio_python("angle_difference_between_two_bearings.py",
+#                               "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/python/angle_difference_between_two_bearings/test_gpt_4o_2024_08_06_angle_difference_between_two_bearings.py"))

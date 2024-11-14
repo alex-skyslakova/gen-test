@@ -7,13 +7,13 @@ from pandas import read_csv
 
 from go_analysis import analyze_go_tests
 from kotlinAnalysis import analyze_kotlin_tests
+from python_assertion_ratios import assertions_density_python, assertions_mccabe_ratio_python
 from python_coverage_computation import get_coverage
 from deepseek import generate_test_deepseek_coder
 from gemini import generate_test_gemini_1_5_pro, generate_test_gemini_1_5_flash
 from gpt import generate_test_codex, generate_test_gpt35, generate_test_gpt4o_mini, generate_test_gpt4o
 from helpers import save_generated_test, save_content
-from java_analysis import run_checkstyle
-from java_validation import validate_java_code
+from java_analysis import run_checkstyle, process_java_files_and_run_test_analysis
 from language import LanguageEnum
 from models import Model
 from python_pass_rate import run_tests_and_compute_pass_rate
@@ -22,17 +22,17 @@ from python_validation import CompileStatus, check_syntax_string, check_syntax_f
 
 LANGUAGES_TO_KEEP = {"Python", "Java", "Kotlin", "Go"}
 
-GENERATED_DIR= "./data/generated/python/"
-STATS_DIR="./data/generated/stats/"
+GENERATED_DIR = "./data/generated/python/"
+STATS_DIR = "./data/generated/stats/"
 
 
 def download_and_validate_dataset():
     dataset = {
-            "Python": read_csv("raw_python_dataset.csv"),
-            "Kotlin": read_csv("raw_kotlin_dataset.csv"),
-            "Java": read_csv("raw_java_dataset.csv"),
-            "Go": read_csv("raw_go_dataset.csv")
-        }
+        "Python": read_csv("raw_python_dataset.csv"),
+        "Kotlin": read_csv("raw_kotlin_dataset.csv"),
+        "Java": read_csv("raw_java_dataset.csv"),
+        "Go": read_csv("raw_go_dataset.csv")
+    }
 
     ds = load_dataset("christopher/rosetta-code")
     train_df = ds.data['train'].to_pandas()
@@ -80,6 +80,7 @@ def download_and_validate_dataset():
         dict_per_language[l] = filtered_df[(filtered_df["code_syntax"] == 'CompileStatus.OK')]
     return dict_per_language
 
+
 def filter_dataset(dict_per_language, size=200):
     syntactically_correct = {}
     for l, df in dict_per_language.items():
@@ -96,6 +97,8 @@ def filter_dataset(dict_per_language, size=200):
         filtered_dict[l] = filtered_dict[l].sort_values(by=['task_name']).head(size)
         filtered_dict[l].to_csv(os.path.join(STATS_DIR, "filtered_" + l + ".csv"), index=False, header=True)
     return filtered_dict
+
+
 #
 # def main():
 #     ds = load_dataset("christopher/rosetta-code")
@@ -140,10 +143,10 @@ def filter_dataset(dict_per_language, size=200):
 #         # Save the filtered dataframe to a CSV file
 #         filtered_df.to_csv(os.path.join(STATS_DIR, "test_filtered_" + l + ".csv"), index=False)
 
-    #model = Model.GPT_3_5_turbo
-    #generate_tests(model, dict_per_language[LanguageEnum.Java.name], LanguageEnum.Java)
-    #df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/filtered_Python_stats_davinci_002.csv")
-    #run_analysis(LanguageEnum.Python, df, "davinci_002")
+# model = Model.GPT_3_5_turbo
+# generate_tests(model, dict_per_language[LanguageEnum.Java.name], LanguageEnum.Java)
+# df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/filtered_Python_stats_davinci_002.csv")
+# run_analysis(LanguageEnum.Python, df, "davinci_002")
 
 def generate_tests(model, df, lang):
     if model == Model.GPT_3_5_turbo:
@@ -178,7 +181,7 @@ def generate_tests(model, df, lang):
         task_name = row['task_name']
         code = row['code']
 
-        generated = generate(task_name, code, lang) #read_generated_test(task_name, model_string, lang.value)
+        generated = generate(task_name, code, lang)  # read_generated_test(task_name, model_string, lang.value)
         if generated is None:
             print("could not parse, skipping")
             generated_codes.append(None)
@@ -196,58 +199,154 @@ def generate_tests(model, df, lang):
 
     df["generated_code"] = generated_codes
     df["file_path"] = filenames
-    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False, header=True)
+    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
+              header=True)
     return df
     # df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/test_filtered_Python_stats_gpt_3_5_turbo.csv")
-    #run_analysis(df, model_string)
-    #run_analysis_python(df, model_string)
+    # run_analysis(df, model_string)
+    # run_analysis_python(df, model_string)
+
 
 def run_analysis(lang, df, model_string):
     if lang == LanguageEnum.Python:
         return run_analysis_python(df, model_string, lang)
     if lang == LanguageEnum.Go:
         return run_analysis_go(df, model_string, lang)
+    if lang == LanguageEnum.Kotlin:
+        return run_analysis_kotlin(df, model_string)
+    if lang == LanguageEnum.Java:
+        return run_analysis_java(df, model_string, lang)
     else:
         print("Analysis for language " + lang.name + " is not yet supported")
 
 
-
 def run_analysis_kotlin(df, model_string):
     compilation_statuses = []
-    line_coverages = []
     warnings = []
     warnings_count = []
     pass_percentages = []
-    time = []
-    timeout = []
+    execution_time_sec = []
+    timeout_occurred = []
+    line_coverage_percentages = []
+    internal_error_occurred = []
+    assertions_density = []
+    assertions_mccabe_ratio = []
 
     for index, row in df.copy(deep=True).iterrows():
         try:
-            filename = row['file_path']
-            if isinstance(filename, float):
+            file_path = row['file_path']
+            if isinstance(file_path, float):
                 warnings_count.append(None)
                 warnings.append(None)
-                line_coverages.append(None)
+                line_coverage_percentages.append(None)
                 pass_percentages.append(None)
                 compilation_statuses.append(None)
-                time.append(None)
-                timeout.append(False)
+                execution_time_sec.append(None)
+                timeout_occurred.append(False)
+                internal_error_occurred.append(False)
+                assertions_density.append(None)
+                assertions_mccabe_ratio.append(None)
                 continue
 
-            #result = analyze_kotlin_tests()
+            result = analyze_kotlin_tests(file_path)
         except Exception as e:
             print("ERROR: ", e)
             warnings_count.append(None)
             warnings.append(None)
-            line_coverages.append(None)
+            line_coverage_percentages.append(None)
             pass_percentages.append(None)
             compilation_statuses.append(None)
-            time.append(None)
-            timeout.append(False)
+            execution_time_sec.append(None)
+            timeout_occurred.append(False)
             continue
-    java_file = ""
-    errors = run_checkstyle(java_file)
+
     NotImplemented()
+
+
+def run_analysis_java(df, model_string, lang):
+    compilation_statuses = []
+    warnings = []
+    warnings_count = []
+    pass_percentages = []
+    execution_time_sec = []
+    timeout_occurred = []
+    line_coverage_percentages = []
+    internal_error_occurred = []
+    assertions_density = []
+    assertions_mccabe_ratio = []
+    runtime_errors = []
+    syntax_maven_output = []
+    test_maven_output = []
+    count = 0
+
+    for index, row in df.copy(deep=True).iterrows():
+        count += 1
+        try:
+            file_path = row['file_path']
+            if isinstance(file_path, float):
+                warnings_count.append(None)
+                warnings.append(None)
+                line_coverage_percentages.append(None)
+                pass_percentages.append(None)
+                compilation_statuses.append(None)
+                execution_time_sec.append(None)
+                timeout_occurred.append(False)
+                internal_error_occurred.append(False)
+                assertions_density.append(None)
+                assertions_mccabe_ratio.append(None)
+                runtime_errors.append(None)
+                syntax_maven_output.append(None)
+                test_maven_output.append(None)
+                continue
+            dir = os.path.dirname(file_path)
+            found_warnings = run_checkstyle(file_path)
+            result = process_java_files_and_run_test_analysis(dir)
+
+            compilation_statuses.append(result["syntax"])
+            warnings.append(found_warnings)
+            warnings_count.append(len(found_warnings) if found_warnings != None else None)
+            pass_percentages.append(result["test_pass_rate"])
+            execution_time_sec.append(result["execution_time_sec"])
+            timeout_occurred.append(result["timeout_occurred"])
+            line_coverage_percentages.append(result["coverage_percentage"])
+            internal_error_occurred.append(result["internal_error_occurred"])
+            assertions_density.append(result["assertion_density"])
+            assertions_mccabe_ratio.append(result["assertions_mccabe_ratio"])
+            runtime_errors.append(result["runtime_errors"])
+            syntax_maven_output.append(result["syntax_maven_output"])
+            test_maven_output.append(result["test_maven_output"])
+
+        except Exception as e:
+            append_if_not_included(count, warnings_count, None)
+            append_if_not_included(count, warnings, None)
+            append_if_not_included(count, line_coverage_percentages, None)
+            append_if_not_included(count, pass_percentages, None)
+            append_if_not_included(count, compilation_statuses, None)
+            append_if_not_included(count, execution_time_sec, None)
+            append_if_not_included(count, timeout_occurred, False)
+            append_if_not_included(count, assertions_density, None)
+            append_if_not_included(count, assertions_mccabe_ratio, None)
+            append_if_not_included(count, internal_error_occurred, True)
+            append_if_not_included(count, runtime_errors, None)
+            append_if_not_included(count, syntax_maven_output, None)
+            append_if_not_included(count, test_maven_output, None)
+
+    df["syntax"] = compilation_statuses
+    df["syntax_maven_output"] = syntax_maven_output
+    df["runtime_errors"] = runtime_errors
+    df["internal_error_occurred"] = internal_error_occurred
+    df["coverage_percentage"] = line_coverage_percentages
+    df["assertion_density"] = assertions_density
+    df["assertions_mccabe_ratio"] = assertions_mccabe_ratio
+    df["execution_time_sec"] = execution_time_sec
+    df["timeout_occurred"] = timeout_occurred
+    df["test_pass_rate"] = pass_percentages
+    df["test_maven_output"] = test_maven_output
+    df["warnings"] = warnings
+    df["warnings_count"] = warnings_count
+
+    df.to_csv(os.path.join(STATS_DIR, "test_filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
+              header=True)
 
 
 def run_analysis_go(df, model_string, lang):
@@ -259,8 +358,11 @@ def run_analysis_go(df, model_string, lang):
     timeout_occurred = []
     line_coverage_percentages = []
     internal_error_occurred = []
-
+    assertions_density = []
+    assertions_mccabe_ratio = []
+    count = 0
     for index, row in df.copy(deep=True).iterrows():
+        count += 1
         try:
             filename = row['file_path']
 
@@ -275,8 +377,12 @@ def run_analysis_go(df, model_string, lang):
                 execution_time_sec.append(None)
                 timeout_occurred.append(False)
                 internal_error_occurred.append(False)
+                assertions_density.append(None)
+                assertions_mccabe_ratio.append(None)
                 continue
-            go_file = os.path.join(os.path.dirname(filename), Path(filename).name.replace("_test.go", ".go").replace(model_string + "_", "")) if filename is not None else None
+            go_file = os.path.join(os.path.dirname(filename),
+                                   Path(filename).name.replace("_test.go", ".go").replace(model_string + "_",
+                                                                                          "")) if filename is not None else None
             test_file = filename
             print("Test file: ", test_file)
             print("Go file: ", go_file)
@@ -287,23 +393,30 @@ def run_analysis_go(df, model_string, lang):
             warnings.append(result["warnings"])
             warnings_count.append(len(result["warnings"]))
             pass_percentages.append(result["test_pass_rate"])
-            execution_time_sec.append(result["time"])
+            execution_time_sec.append(result["execution_time"])
             timeout_occurred.append(result["timeout"])
             internal_error_occurred.append(result["internal_error_occurred"])
+            assertions_density.append(result["assertions_density"])
+            assertions_mccabe_ratio.append(result["assertions_mccabe_ratio"])
 
         except Exception as e:
             print("ERROR: ", e)
-            warnings_count.append(None)
-            warnings.append(None)
-            line_coverage_percentages.append(None)
-            pass_percentages.append(None)
-            compilation_statuses.append(None)
-            execution_time_sec.append(None)
-            timeout_occurred.append(False)
+            append_if_not_included(count, warnings_count, None)
+            append_if_not_included(count, warnings, None)
+            append_if_not_included(count, line_coverage_percentages, None)
+            append_if_not_included(count, pass_percentages, None)
+            append_if_not_included(count, compilation_statuses, None)
+            append_if_not_included(count, execution_time_sec, None)
+            append_if_not_included(count, timeout_occurred, False)
+            append_if_not_included(count, assertions_density, None)
+            append_if_not_included(count, assertions_mccabe_ratio, None)
+            append_if_not_included(count, internal_error_occurred, True)
             continue
 
     df["compilation_status"] = compilation_statuses
     df["line_coverage"] = line_coverage_percentages
+    df["assertions_density"] = assertions_density
+    df["assertions_mccabe_ratio"] = assertions_mccabe_ratio
     df["test_pass_percentage"] = pass_percentages
     df["execution_time"] = execution_time_sec
     df["warnings_count"] = warnings_count
@@ -311,8 +424,16 @@ def run_analysis_go(df, model_string, lang):
     df["timeout"] = timeout_occurred
     df["internal_error_occurred"] = internal_error_occurred
 
-    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False, header=True)
+    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
+              header=True)
     return df
+
+
+def append_if_not_included(count, list, value):
+    if len(list) != count:
+        return list.append(value)
+    return list
+
 
 def run_analysis_python(df, model_string, lang):
     compilation_statuses = []
@@ -324,12 +445,14 @@ def run_analysis_python(df, model_string, lang):
     warnings_count = []
     pass_percentages = []
     internal_error_occurred = []
+    assertions_density = []
+    assertions_mccabe_ratio = []
 
     for index, row in df.copy(deep=True).iterrows():
         error = False
-        filename = row['file_path']
+        test_file_path = row['file_path']
 
-        print("Filename: ", filename)
+        print("Filename: ", test_file_path)
 
         # return {
         #     "compilation_status": compilation_status,  # e.g., "Success" or "Syntax Error in line 23"
@@ -343,7 +466,7 @@ def run_analysis_python(df, model_string, lang):
         #     "internal_error_occurred": internal_error_flag
         # }
 
-        if isinstance(filename, float):
+        if isinstance(test_file_path, float):
             warnings.append(None)
             warnings_count.append(None)
             branch_overage_percentages.append(None)
@@ -353,20 +476,25 @@ def run_analysis_python(df, model_string, lang):
             internal_error_occurred.append(True)
             execution_time_sec.append(None)
             timeout_occurred.append(None)
+            assertions_mccabe_ratio.append(None)
+            assertions_density.append(None)
             continue
 
-        print("Filename: ", filename)
-        compilation_status = check_syntax_file(filename)
+        print("Filename: ", test_file_path)
+        compilation_status = check_syntax_file(test_file_path)
         compilation_statuses.append(compilation_status)
 
-        file = Path(filename).name.replace("test_" + model_string + "_", "") if filename is not None else None
-        print(file)
+        code_file_name = Path(test_file_path).name.replace("test_" + model_string + "_",
+                                                           "") if test_file_path is not None else None
+        print("code_file_name:", code_file_name)
+        code_file_path = os.path.join(os.path.dirname(test_file_path), code_file_name)
+        print("code_file_path:", code_file_path)
 
         if compilation_status == CompileStatus.OK:
             try:
-                directory = os.path.dirname(filename)
-                line_coverage = get_coverage(filename)
-                branch_coverage = get_coverage(filename, branch=True)
+                directory = os.path.dirname(test_file_path)
+                line_coverage = get_coverage(test_file_path)
+                branch_coverage = get_coverage(test_file_path, branch=True)
                 pass_percentage, timeout = run_tests_and_compute_pass_rate(directory)
             except Exception as e:
                 print(e)
@@ -383,14 +511,30 @@ def run_analysis_python(df, model_string, lang):
             pass_percentage = None
             timeout = None
         try:
-            count, warning = pylint_check(filename)
+            count, warning = pylint_check(test_file_path)
             warnings.append(warning)
             warnings_count.append(count)
         except Exception as e:
             print("exception occurred: ", e)
             error = True
+            warnings.append(None)
             warnings_count.append(None)
-            warnings_count.append(None)
+
+        try:
+            density = assertions_density_python(test_file_path)
+            assertions_density.append(density)
+        except Exception as e:
+            print("exception occurred: ", e)
+            error = True
+            assertions_density.append(None)
+
+        try:
+            mccabe = assertions_mccabe_ratio_python(code_file_path, test_file_path)
+            assertions_mccabe_ratio.append(mccabe)
+        except Exception as e:
+            print("exception occurred: ", e)
+            error = True
+            assertions_mccabe_ratio.append(None)
 
         timeout_occurred.append(timeout)
         internal_error_occurred.append(error)
@@ -402,12 +546,13 @@ def run_analysis_python(df, model_string, lang):
     df["compilation_status"] = compilation_statuses
     df["line_coverage_percent"] = line_coverage_percentages
     df["branch_coverage"] = branch_overage_percentages
+    df["assertions_density"] = assertions_density
+    df["assertions_mccabe_ratio"] = assertions_mccabe_ratio
     df["warnings"] = warnings
     df["warnings_count"] = warnings_count
     df["tests_pass_percentage"] = pass_percentages
     df["execution_time"] = execution_time_sec
     df["timeout"] = timeout_occurred
-
 
     all_warnings, all_errors, all_fatals = [], [], []
     for w in warnings:
@@ -423,13 +568,15 @@ def run_analysis_python(df, model_string, lang):
     df["pylint_error_count"] = all_errors
     df["pylint_fatals_count"] = all_fatals
 
-    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False, header=True)
+    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
+              header=True)
 
     return df
 
-#df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/filtered_Python_stats_davinci_002.csv")
-#run_analysis(LanguageEnum.Python, df, "davinci_002")
-#main()
+
+# df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/filtered_Python_stats_davinci_002.csv")
+# run_analysis(LanguageEnum.Python, df, "davinci_002")
+# main()
 
 if __name__ == '__main__':
     # df = read_csv(
@@ -437,9 +584,7 @@ if __name__ == '__main__':
     #
     # run_analysis(LanguageEnum.Python, df, "deepseek_coder'")
 
-
-
-    #dataset = download_and_validate_dataset()
+    # dataset = download_and_validate_dataset()
     # or
     languages = []
     dataset = {
@@ -448,7 +593,6 @@ if __name__ == '__main__':
         "Java": read_csv("raw_java_dataset.csv"),
         "Go": read_csv("raw_go_dataset.csv")
     }
-
 
     filtered = filter_dataset(dataset)
     print(filtered)
@@ -461,9 +605,7 @@ if __name__ == '__main__':
     else:
         language = LanguageEnum.Python
         model = Model.GEMINI_1_5_flash
-        #generated_df = generate_tests(model, filtered[language.name], language)
+        # generated_df = generate_tests(model, filtered[language.name], language)
         generated_df = read_csv("data/generated/stats/filtered_Python_stats_gemini_1_5_flash_002.csv")
         run_analysis_python(generated_df, "gemini_1_5_flash_002", language)
         print("acb")
-
-

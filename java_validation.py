@@ -9,25 +9,22 @@ import os
 
 def validate_java_code(java_code):
     try:
-        # Create a temporary directory
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create a temporary Java file
-            name = convert_to_java_filename("Temp.java", "", data=java_code)
-            temp_file_path = os.path.join("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/javaSetup/src/main/java/org/example/package", name)
-            with open(temp_file_path, "w") as temp_file:
-                temp_file.write(java_code)
+        name = convert_to_java_filename("Temp.java", "", data=java_code)
+        temp_file_path = os.path.join("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/javaSetup/src/main/java/org/example/package", name)
+        with open(temp_file_path, "w") as temp_file:
+            temp_file.write(java_code)
 
-            # Run javac to check for syntax errors
-            result = subprocess.run(['javac', temp_file_path], capture_output=True, text=True)
+        # Run javac to check for syntax errors
+        result = subprocess.run(['javac', temp_file_path], capture_output=True, text=True)
 
-            # Check the return code to determine if there was a syntax error
-            if result.returncode == 0:
-                # No syntax errors
-                return CompileStatus.OK
-            else:
-                # Syntax errors occurred
-                print(f"Syntax Error:\n{result.stderr}")
-                return CompileStatus.SYNTAX_ERROR
+        # Check the return code to determine if there was a syntax error
+        if result.returncode == 0:
+            # No syntax errors
+            return CompileStatus.OK
+        else:
+            # Syntax errors occurred
+            print(f"Syntax Error:\n{result.stderr}")
+            return CompileStatus.SYNTAX_ERROR
 
     except Exception as e:
         # Catch any other unexpected exceptions
@@ -68,3 +65,35 @@ def validate_java_code(java_code):
 #
 # # Print total failed validations
 # print(f"Total failed validations: {failed}")
+#
+# def validate_java_code(java_code):
+#     try:
+#         name = convert_to_java_filename("Temp.java", "", data=java_code)
+#         temp_file_path = os.path.join(
+#             "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/javaSetup/src/main/java/org/example/package",
+#             name
+#         )
+#         temp_test_path
+#         with open(temp_file_path, "w") as temp_file:
+#             temp_file.write(java_code)
+#
+#         # Change directory to your project's root
+#         project_root = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/javaSetup"
+#
+#         # Run Maven compile
+#         result = subprocess.run(
+#             ['mvn', 'compile', '-f', os.path.join(project_root, 'pom.xml')],
+#             cwd=project_root,
+#             capture_output=True,
+#             text=True
+#         )
+#
+#         if result.returncode == 0:
+#             return CompileStatus.OK
+#         else:
+#             print(f"Syntax Error:\n{result.stdout}\n{result.stderr}")
+#             return CompileStatus.SYNTAX_ERROR
+#
+#     except Exception as e:
+#         print(f"Exception occurred: {e}")
+#         return CompileStatus.EXCEPTION_OCCURRED

@@ -6,6 +6,7 @@ import subprocess
 import re
 from collections import Counter
 
+from go_assertion_ratios import assertions_density_go, assertions_mccabe_ratio_go
 from python_validation import CompileStatus
 
 
@@ -127,10 +128,10 @@ def run_tests(project_dir):
                 # Handle timeout scenario
                 return {
                     "test_pass_rate": 0,
-                    "time": None,
+                    "execution_time": None,
                     "coverage": None,
                     "timeout": True,
-                    "internal error": False,
+                    "internal_error_occurred": False,
                 }
             else:
                 # Handle other test failures
@@ -179,14 +180,21 @@ def run_tests(project_dir):
         print(total_time)
         return {
             "test_pass_rate": pass_percentage,
-            "time": total_time,
+            "execution_time": total_time,
             "coverage": coverage,
-            "timeout": False
+            "timeout": False,
+            "internal_error_occurred": False
         }
 
     except Exception as e:
         print(f"Error running Go tests: {e}")
-        return None
+        return {
+                    "test_pass_rate": 0,
+                    "execution_time": None,
+                    "coverage": None,
+                    "timeout": True,
+                    "internal_error_occurred": True
+                }
 #
 #
 # if __name__ == "__main__":
@@ -214,8 +222,8 @@ def analyze_go_tests(go_file_path, test_file_path):
 
     try:
         # Copy the Go file and the specified test file to the temporary directory
-        shutil.copy(go_file_path, temp_dir)
-        shutil.copy(test_file_path, temp_dir)
+        new_go_file_path = shutil.copy(go_file_path, temp_dir)
+        new_test_file_path = shutil.copy(test_file_path, temp_dir)
 
         # Change to temporary directory
         os.chdir(temp_dir)
@@ -224,6 +232,8 @@ def analyze_go_tests(go_file_path, test_file_path):
         syntax_build = check_syntax(os.path.join(temp_dir, os.path.basename(test_file_path)))
         syntax_vet, warnings = check_for_warnings(temp_dir)
         syntax = determine_syntax_result(syntax_build, syntax_vet)
+        assertions_density = assertions_density_go(new_test_file_path)
+        mccabe = assertions_mccabe_ratio_go(new_go_file_path, new_test_file_path)
         print("Syntax build: ", syntax_build)
         print("Syntax vet: ", syntax_vet)
         print("Final syntax: ", syntax)
@@ -240,7 +250,9 @@ def analyze_go_tests(go_file_path, test_file_path):
                 "warnings": warnings,
                 "warnings_count": len(warnings) if warnings is not None else None,
                 "timeout": False,
-                "internal_error_occurred": False
+                "internal_error_occurred": False,
+                "assertions_density": assertions_density,
+                "assertions_mccabe_ratio": mccabe
             }
 
         # Run tests and get results
@@ -250,8 +262,10 @@ def analyze_go_tests(go_file_path, test_file_path):
             test_results["warnings"] = warnings
             test_results["warnings_count"] = len(warnings) if warnings is not None else None
             test_results["syntax"] = syntax
+            test_results["assertions_density"] = assertions_density
+            test_results["assertions_mccabe_ratio"] = mccabe
             print(f"Percentage of passed tests: {test_results['test_pass_rate']}")
-            print(f"Total time: {test_results['time']} seconds")
+            print(f"Total time: {test_results['execution_time']} seconds")
             if test_results['coverage'] is not None:
                 print(f"Coverage: {test_results['coverage']}%")
             else:
@@ -262,7 +276,7 @@ def analyze_go_tests(go_file_path, test_file_path):
             return {
                 "syntax": syntax,
                 "test_pass_rate": None,
-                "time": None,
+                "execution_time": None,
                 "timeout": False,
                 "coverage": None,
                 "warnings": warnings,
