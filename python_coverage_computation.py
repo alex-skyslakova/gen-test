@@ -31,10 +31,10 @@ def get_coverage(filename, branch=False):
 
     if branch:
         args = ["pytest", directory, "--tb=short", "--timeout=30", "--timeout-method=signal",
-                "--cov", directory, "--cov-report=json", "--cov-branch", filename]
+                "--cov", directory, "--cov-report=json:./coverage.json", "--cov-branch", filename]
     else:
         args = ["pytest", directory, "--tb=short", "--timeout=30", "--timeout-method=signal",
-                "--cov", directory, "--cov-report=json", filename]
+                "--cov", directory, "--cov-report=json:./coverage.json", filename]
 
     process = subprocess.Popen(
         args,
@@ -51,7 +51,6 @@ def get_coverage(filename, branch=False):
             process.terminate()  # Kill all processes in the group
             print(f"Test execution exceeded {30} seconds and was terminated.")
             return None
-        time.sleep(1)
 
     # Collect stdout and stderr after the process completes
     stdout, stderr = process.communicate()
@@ -76,6 +75,6 @@ def get_coverage(filename, branch=False):
     return round(0, 2)
 
 if __name__ == '__main__':
-    coverage_percentage = get_coverage(filename="/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/python/flipping_bits_game/test_davinci_002_flipping_bits_game.py")
+    coverage_percentage = get_coverage(filename="/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/python/flipping_bits_game/test_gemini_1_5_flash_002_flipping_bits_game.py")
     if coverage_percentage is not None:
         print(f"Test Coverage: {coverage_percentage}%")

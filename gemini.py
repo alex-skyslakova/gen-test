@@ -21,11 +21,10 @@ client = OpenAI(api_key=GEMINI_API_KEY,
 def generate_test_gemini_1_5_pro(name, code, lang, docs=""):
 
     try:
-        time.sleep(5)
         genai.configure(api_key=GEMINI_API_KEY)
         filename = convert_to_filename(name, 'gemini-1.5-pro-002', lang, data=code)
 
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        model = genai.GenerativeModel('gemini-1.5-pro-002')
         print("generating for " + simplify(name))
         docs = (" Documentation: " + docs) if docs is not None and docs != "" else ""
         message = "You are a developer tasked with writing unit tests based on provided code. Provide complete, ready-to-use test code covering all use cases. If tests can't be written, respond with 'None'. Do not include tested code to the response." + docs + " Code " + (filename if filename else "") + ": " + code

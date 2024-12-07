@@ -37,6 +37,7 @@ def check_syntax(file):
         print("Exception occurred during validation: ", e)
         return CompileStatus.EXCEPTION_OCCURRED
 
+
 def check_for_warnings(project_dir, tests=True):
     try:
 
@@ -107,6 +108,7 @@ def build_project(project_dir):
 def run_tests(project_dir):
     """Run Go tests and return summary with coverage."""
     test_cmd = ["go", "test", "-timeout", "30s", "-json", "-cover", "./..."]
+    runtime_errors = 0
 
     print("Running tests...")
     try:
@@ -119,6 +121,8 @@ def run_tests(project_dir):
         )
         output = result.stdout
         print(output)
+        stderr = result.stderr
+        print(stderr)
 
         # Check if the subprocess exited with a non-zero return code
         if result.returncode != 0:
@@ -128,20 +132,34 @@ def run_tests(project_dir):
                 # Handle timeout scenario
                 return {
                     "test_pass_rate": 0,
-                    "execution_time": None,
-                    "coverage": None,
+                    "execution_time_sec": None,
+                    "line_coverage_percent": None,
+                    "branch_coverage_percent": None,
                     "timeout": True,
                     "internal_error_occurred": False,
+                    "runtime_errors_count": None
                 }
             else:
-                # Handle other test failures
-                pass
+                print("FAILUREEEEE")
+                runtime_error_pattern = re.compile(
+                    r"(panic:|fatal error:|runtime error:)", re.IGNORECASE
+                )
+                assertion_error_pattern = re.compile(r"assert")
+
+                # Search for runtime errors in stdout and stderr
+                for o in (output, stderr):
+                    for line in o.splitlines():
+                        # Match lines with runtime errors but exclude assertions
+                        if runtime_error_pattern.search(line) and not assertion_error_pattern.search(line):
+                            print("RUNTIME ERROR>>> ", line)
+                            runtime_errors = runtime_errors + 1
 
         # Parse the JSON output
         passed_tests = 0
         failed_tests = 0
         total_time = 0.0
         coverage = None
+        summary_time = None
 
         for line in output.splitlines():
             if not line.strip():
@@ -160,41 +178,52 @@ def run_tests(project_dir):
                 failed_tests += 1
                 total_time += data.get('Elapsed', 0)
 
+            if (data.get('Action') == 'pass' or data.get('Action') == 'fail') and 'Test' not in data and 'Elapsed' in data:
+                summary_time = data["Elapsed"]
+
             # Check for coverage information
             if data.get('Action') == 'output' and 'Output' in data:
                 output_line = data['Output'].strip()
                 if output_line.startswith("coverage:"):
+                    print("HEREEEEEEEE")
                     # Extract the coverage percentage
-                    import re
                     match = re.search(r'coverage: ([\d\.]+)%', output_line)
                     if match:
                         coverage = float(match.group(1))
 
             # Alternative: Some versions include 'Coverage' field
             elif data.get('Action') == 'pass' and 'Coverage' in data:
+                print("THEREEEEEEEEEEEEE")
                 coverage = data['Coverage']
 
+        #compute_branch_coverage(project_dir)
         total_tests = passed_tests + failed_tests
-        pass_percentage = round((passed_tests / total_tests) * 100, 2)if total_tests > 0 else 0
+        pass_percentage = round((passed_tests / total_tests) * 100, 2) if total_tests > 0 else 0
 
-        print(total_time)
-        return {
+        print("TOTAL TIME:", total_time)
+        print("SUMMARY TIME:", summary_time)
+        v = {
             "test_pass_rate": pass_percentage,
-            "execution_time": total_time,
-            "coverage": coverage,
+            "execution_time_sec": summary_time if summary_time is not None else total_time,
+            "line_coverage_percent": coverage,
+            "branch_coverage_percent": None, # TODO
             "timeout": False,
-            "internal_error_occurred": False
+            "internal_error_occurred": False,
+            "runtime_errors_count": runtime_errors
         }
-
+        print(str(v))
+        return v
     except Exception as e:
         print(f"Error running Go tests: {e}")
         return {
-                    "test_pass_rate": 0,
-                    "execution_time": None,
-                    "coverage": None,
-                    "timeout": True,
-                    "internal_error_occurred": True
-                }
+            "test_pass_rate": 0,
+            "execution_time_sec": None,
+            "line_coverage_percent": None,
+            "branch_coverage_percent": None,
+            "timeout": True,
+            "internal_error_occurred": True,
+            "runtime_errors_count": runtime_errors
+        }
 #
 #
 # if __name__ == "__main__":
@@ -245,14 +274,16 @@ def analyze_go_tests(go_file_path, test_file_path):
             return {
                 "syntax": syntax,
                 "test_pass_rate": None,
-                "execution_time": None,
-                "coverage": None,
+                "execution_time_sec": None,
+                "line_coverage_percent": None,
+                "branch_coverage_percent": None,
                 "warnings": warnings,
                 "warnings_count": len(warnings) if warnings is not None else None,
                 "timeout": False,
                 "internal_error_occurred": False,
                 "assertions_density": assertions_density,
-                "assertions_mccabe_ratio": mccabe
+                "assertions_mccabe_ratio": mccabe,
+                "runtime_errors_count": None
             }
 
         # Run tests and get results
@@ -265,9 +296,9 @@ def analyze_go_tests(go_file_path, test_file_path):
             test_results["assertions_density"] = assertions_density
             test_results["assertions_mccabe_ratio"] = mccabe
             print(f"Percentage of passed tests: {test_results['test_pass_rate']}")
-            print(f"Total time: {test_results['execution_time']} seconds")
-            if test_results['coverage'] is not None:
-                print(f"Coverage: {test_results['coverage']}%")
+            print(f"Total time: {test_results['execution_time_sec']} seconds")
+            if test_results is not None and test_results['line_coverage_percent'] is not None:
+                print(f"Coverage: {test_results['line_coverage_percent']}%")
             else:
                 print("Coverage information not available.")
             return test_results
@@ -276,12 +307,16 @@ def analyze_go_tests(go_file_path, test_file_path):
             return {
                 "syntax": syntax,
                 "test_pass_rate": None,
-                "execution_time": None,
+                "execution_time_sec": None,
                 "timeout": False,
-                "coverage": None,
+                "line_coverage_percent": None,
+                "branch_coverage_percent": None,
                 "warnings": warnings,
                 "warnings_count": len(warnings) if warnings is not None else None,
-                "internal_error_occurred": True
+                "internal_error_occurred": True,
+                "runtime_errors_count": None,
+                "assertions_density": assertions_density,
+                "assertions_mccabe_ratio": mccabe,
             }
 
     finally:
@@ -298,9 +333,59 @@ def determine_syntax_result(build, vet):
         return vet
     return CompileStatus.OK
 
+#
+# def compute_branch_coverage(directory):
+#     os.environ["PATH"] += os.pathsep + "/usr/local/golang/bin"
+#     os.environ["PATH"] += os.pathsep + "/Users/alex/go/bin"
+#
+#
+#     # export PATH="/usr/local/golang/bin:$PATH"
+#     # export PATH =$(go env GOPATH) / bin:$PATH
+#     try:
+#         # Run `gocov test` command and capture the JSON output
+#         print("RUNNING GOBCO")
+#         result = subprocess.run(
+#             ["gobco", directory],
+#             stdout=subprocess.PIPE,
+#             stderr=subprocess.PIPE,
+#             text=True,
+#             check=True
+#         )
+#
+#         # Parse the JSON output
+#         coverage_data = json.loads(result.stdout)
+#
+#         # Calculate branch coverage
+#         total_branches = 0
+#         covered_branches = 0
+#
+#         for pkg in coverage_data["packages"]:
+#             for func in pkg["functions"]:
+#                 total_branches += func.get("branches", 0)
+#                 covered_branches += func.get("covered_branches", 0)
+#
+#         branch_coverage = (
+#             (covered_branches / total_branches) * 100 if total_branches > 0 else 0
+#         )
+#
+#         return {
+#             "total_branches": total_branches,
+#             "covered_branches": covered_branches,
+#             "branch_coverage": branch_coverage,
+#         }
+#
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error while running gocov test: {e.stderr}")
+#         return None
+#     except json.JSONDecodeError:
+#         print("Failed to parse gocov output.")
+#         return None
+
+
 if __name__ == "__main__":
     # Paths to your Go file and the specific test file
     go_file = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/abbreviations_automatic/abbreviations_automatic.go"
     test_file = "data/generated/golang/abbreviations_automatic/gemini_1_5_flash_002_abbreviations_automatic_test.go"
 
+    #build_project("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/tmp1v_oax0s")
     analyze_go_tests(go_file, test_file)

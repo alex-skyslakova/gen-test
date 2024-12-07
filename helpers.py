@@ -2,10 +2,12 @@ import concurrent.futures
 import os
 import re
 
+import pandas as pd
+
 from language import LanguageEnum
 
-GENERATED_DIR = "./data/generated/python/"
-STATS_DIR = "./data/generated/stats/"
+GENERATED_DIR = "./data/generated/docs_python/"
+STATS_DIR = "./data/generated/docs_stats/"
 
 
 def run_with_timeout(func, timeout):
@@ -24,20 +26,6 @@ def clean_string(input_string):
     return cleaned_string
 
 
-def save_generated_test(name: str, model: str, test: str, lang):
-    # Specify the directory name
-    directory = GENERATED_DIR + convert_to_filename(name, model, lang, directory=True, data=test)
-
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    filename = os.path.join(directory, convert_to_filename(name, model, lang, test=True, data=test))
-
-    with open(filename, "w", encoding='utf-8') as file:
-        file.write(test.replace('\u00A0', ' '))
-    return filename
-
-
 def convert_to_filename(input_str, model, language, directory=False, test=False, data=None):
     if language == LanguageEnum.Python:
         return convert_to_python_filename(input_str, model, directory, test)
@@ -50,6 +38,11 @@ def convert_to_filename(input_str, model, language, directory=False, test=False,
     else:
         print("unrecognized language")
         return
+
+
+def extract_llm_model(path):
+    llm_model_match = re.search(r"stats_(\w+)", os.path.basename(path))
+    return llm_model_match.group(1) if llm_model_match else "Unknown"
 
 
 def convert_to_python_filename(input_str, model, directory=False, test=False):
@@ -76,7 +69,9 @@ def convert_to_kotlin_filename(input_str, model, directory=False, test=False, da
     if test:
         pascal_case_str += 'Test'
     if directory:
-        return pascal_case_str
+        p = os.path.join(model, pascal_case_str)
+        print("Dir name: ", p)
+        return p
     return pascal_case_str + '.kt'
 
 
@@ -126,21 +121,38 @@ def convert_to_go_filename(input_str, model, directory=False, test=False):
     return snake_case_str + '.go'
 
 
-def read_generated_test(name: str, type: str, suffix):
+import os
+
+def read_generated_test(name: str, model: str, lang, data: str = None):
     # Specify the directory name
-    directory = GENERATED_DIR + simplify(name)
+    directory = GENERATED_DIR + convert_to_filename(name, model, lang, directory=True, data=data)
 
-    # Generate the filename using the same logic
-    filename = os.path.join(directory, name_to_testfile(name, type, suffix))
-
-    # Check if the file exists
-    if os.path.exists(filename):
-        # If the file exists, read its content
-        with open(filename, "r", encoding='utf-8') as file:
-            return file.read(), filename
-    else:
-        # Return None if the file does not exist
+    if not os.path.exists(directory):
         return None, None
+
+    filename = os.path.join(directory, convert_to_filename(name, model, lang, test=True, data=data))
+
+    if not os.path.exists(filename):
+        return None, None
+
+    with open(filename, "r", encoding='utf-8') as file:
+        content = file.read()
+
+    return content, filename
+
+
+def save_generated_test(name: str, model: str, test: str, lang):
+    # Specify the directory name
+    directory = GENERATED_DIR + convert_to_filename(name, model, lang, directory=True, data=test)
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    filename = os.path.join(directory, convert_to_filename(name, model, lang, test=True, data=test))
+
+    with open(filename, "w", encoding='utf-8') as file:
+        file.write(test.replace('\u00A0', ' '))
+    return filename
 
 
 def save_content(name: str, model, content: str, lang):
@@ -206,3 +218,28 @@ def rename_java_files(base_dir):
                         print(f"Renamed '{file_path}' to '{new_file_path}'")
                 else:
                     print(f"No public class found in '{file_path}', skipping.")
+
+
+def make_private_java_methods_public(df, code_column):
+    import re
+
+    def modify_code(code):
+        """
+        Modifies the given Java source code by replacing private method declarations
+        with public method declarations.
+        """
+        # Regular expression to match `private` methods and replace them with `public`
+        method_pattern = r"private\s+([\w<>\[\]]+\s+\w+\s*\([^)]*\)\s*\{)"
+        modified_code = re.sub(method_pattern, r"public \1", code)
+        return modified_code
+
+    # Apply modification for each row in the specified column
+    df[code_column + "_copy"] = df[code_column]
+    df[code_column] = df[code_column].apply(modify_code)
+
+    return df
+
+df = pd.read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv")
+df = make_private_java_methods_public(df, "code")
+print(df)
+df.to_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/test_filtered_Java_stats_gpt_4o_2024_08_06.csv", index=False)

@@ -39,4 +39,4 @@ def check_syntax_string(code_string) -> CompileStatus:
         return CompileStatus.EXCEPTION_OCCURRED
 
 if __name__ == '__main__':
-    print(check_syntax_file("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/python/floyd_warshall_algorithm/test_davinci_002_floyd_warshall_algorithm.py"))
+    print(check_syntax_file("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/tttttttttt.py"))

@@ -66,39 +66,37 @@ def parse_checkstyle_errors(output):
     return errors
 
 
-def process_java_files_and_run_test_analysis(input_dir, src_dir=JAVA_SRC_DIR, test_dir=JAVA_TEST_DIR,
-                                     project_dir=JAVA_PROJECT_ROOT, timeout=30):
-    # Track copied files for cleanup later
-    copied_files = []
+def run_maven_test_compile(project_dir, timeout):
+    """
+    Runs 'mvn test-compile' in the given project directory with the specified timeout.
+
+    Returns a tuple: (syntax_maven_output, syntax, timeout_occurred, error)
+    """
+    syntax_maven_output = None
+    syntax = None
     timeout_occurred = False
     error = False
-    source_file_path = None
-    test_file_path = None
-
-    # Step 1: Copy .java files to the respective directories
-    for file_name in os.listdir(input_dir):
-        if file_name.endswith(".java"):
-            source_path = os.path.join(input_dir, file_name)
-            if file_name.endswith("Test.java"):
-                destination_path = os.path.join(test_dir, file_name)
-                test_file_path = destination_path
-            else:
-                destination_path = os.path.join(src_dir, file_name)
-                source_file_path = destination_path
-            shutil.copy(source_path, destination_path)
-            copied_files.append(destination_path)
 
     try:
-        result = subprocess.run(['mvn', 'test-compile'], cwd=project_dir, capture_output=True, text=True,
-                                timeout=timeout)
+        result = subprocess.run(
+            ['mvn', 'test-compile'],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
         syntax_maven_output = result.stdout
+        print(result.stdout)
+        print(result.stderr)
         if result.returncode == 0:
+            print("TEST COMPILE PASSED")
             syntax = CompileStatus.OK
         else:
+            print("TEST COMPILE FAILED")
             syntax = CompileStatus.SYNTAX_ERROR
     except subprocess.TimeoutExpired:
         timeout_occurred = True
-        syntax_maven_output = "Test execution timed out."
+        syntax_maven_output = "Test compilation timed out."
         syntax = CompileStatus.EXCEPTION_OCCURRED
     except Exception as e:
         print("Error occurred during compilation: ", e)
@@ -106,108 +104,223 @@ def process_java_files_and_run_test_analysis(input_dir, src_dir=JAVA_SRC_DIR, te
         syntax = CompileStatus.EXCEPTION_OCCURRED
         syntax_maven_output = None
 
-    assertions_density = assertions_density_java(test_file_path)
-    try:
-        mccabe = assertions_mccabe_ratio_java(source_file_path, test_file_path)
-    except Exception as e:
-        print("Error occurred during computation of mccabe ratio: ", e)
-        mccabe = None
+    return syntax_maven_output, syntax, timeout_occurred, error
 
-    if syntax != CompileStatus.OK:
-        for copied_file in copied_files:
-            os.remove(copied_file)
-        return {
-            "execution_time_sec": None,
-            "coverage_percentage": None,
-            "timeout_occurred": timeout_occurred,
-            "internal_error_occurred": error,
-            "syntax": syntax,
-            "syntax_maven_output": syntax_maven_output,
-            "assertion_density": assertions_density,
-            "assertions_mccabe_ratio": mccabe,
-            "runtime_errors": None,
-            "test_pass_rate": None,
-            "test_maven_output": None
-        }
 
-    # Step 2: Run 'mvn clean test' with a timeout and measure the time
+def run_maven_clean_test(project_dir, timeout):
+    """
+    Runs 'mvn clean test' in the given project directory with the specified timeout.
+
+    Returns a tuple: (test_maven_output, timeout_occurred, error, execution_time)
+    """
+    test_maven_output = None
+    timeout_occurred = False
+    error = False
     start_time = time.time()
     try:
-        result = subprocess.run(['mvn', 'clean', 'test'], cwd=project_dir, capture_output=True, text=True,
-                                timeout=timeout)
+        result = subprocess.run(
+            ['mvn', 'clean', 'verify'],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
         test_maven_output = result.stdout
     except subprocess.TimeoutExpired:
         timeout_occurred = True
         test_maven_output = "Test execution timed out."
-    end_time = time.time()
-
-    # Step 3: Parse JaCoCo report for coverage percentage
-    coverage_report_path = os.path.join(project_dir, 'target', 'site', 'jacoco', 'jacoco.xml')
-    if os.path.exists(coverage_report_path) and not timeout_occurred:
-        tree = ET.parse(coverage_report_path)
-        root = tree.getroot()
-
-        # Find the 'counter' element with type 'INSTRUCTION' and get covered and missed values
-        instruction_counter = next(
-            (counter for counter in root.findall('counter') if counter.get('type') == 'INSTRUCTION'), None)
-        if instruction_counter is not None:
-            covered = int(instruction_counter.get('covered'))
-            missed = int(instruction_counter.get('missed'))
-            coverage_percentage = (covered / (covered + missed)) * 100
-        else:
-            coverage_percentage = 0.0
-    else:
-        coverage_percentage = None
-
-    pass_rate, runtime_errors = parse_report_and_compute_pass_rate()
-
-    # Step 4: Calculate execution time
-    execution_time = end_time - start_time
-
-    parse_report_and_compute_pass_rate()
-    # Step 5: Cleanup copied files
-    for copied_file in copied_files:
-        os.remove(copied_file)
-
-    return {
-        "execution_time_sec": execution_time,
-        "coverage_percentage": coverage_percentage,
-        "timeout_occurred": timeout_occurred,
-        "test_maven_output": test_maven_output,
-        "syntax_maven_output": syntax_maven_output,
-        "internal_error_occurred": error,
-        "syntax": syntax,
-        "runtime_errors": runtime_errors,
-        "test_pass_rate": pass_rate,
-        "assertion_density": assertions_density,
-        "assertions_mccabe_ratio": mccabe
-    }
-
-
-def validate_java_file_with_javac(file_path):
-    try:
-        # Run the javac command to compile the Java file
-        result = subprocess.run(['javac', file_path], capture_output=True, text=True)
-
-        # Check the return code
-        if result.returncode == 0:
-            # Compilation was successful, so syntax is valid
-            return CompileStatus.OK
-        else:
-            # Compilation failed, likely due to a syntax error
-            print(f"Syntax Error in file {file_path}:\n\n\n\n\n\n{result.stderr}")
-            return CompileStatus.SYNTAX_ERROR
-
     except Exception as e:
-        # Handle any other unexpected exceptions
-        print(f"Exception occurred while validating file {file_path}: {e}")
-        return CompileStatus.EXCEPTION_OCCURRED
+        print("Error occurred during test execution: ", e)
+        error = True
+    end_time = time.time()
+    execution_time = end_time - start_time
+    return test_maven_output, timeout_occurred, error, execution_time
 
 
-def parse_report_and_compute_pass_rate():
+def compute_coverage_percentage(project_dir, src_file_path, timeout_occurred):
+    """
+    Parses the JaCoCo coverage report and computes both line and branch coverage percentages.
+
+    Returns:
+        A dictionary with line and branch coverage percentages, or None if the report is not found or a timeout occurred.
+    """
+    if timeout_occurred:
+        return {"line": None, "branch": None}
+
+    coverage_report_path = os.path.join(project_dir, 'target', 'site', 'jacoco', 'jacoco.xml')
+    if os.path.exists(coverage_report_path):
+        try:
+            tree = ET.parse(coverage_report_path)
+            root = tree.getroot()
+
+            # Initialize coverage metrics
+            coverage = {"line": None, "branch": None}
+
+            file_name = os.path.basename(src_file_path)
+            # Find the <sourcefile> element with the specified file name
+            source_file = root.find(f".//sourcefile[@name='{file_name}']")
+            if source_file is None:
+                print(f"File '{file_name}' not found in the coverage report.")
+                return coverage
+
+            # Extract LINE and BRANCH counters for the file
+            for counter_type in ["LINE", "BRANCH"]:
+                counter = source_file.find(f"./counter[@type='{counter_type}']")
+                if counter is not None:
+                    covered = int(counter.get("covered", 0))
+                    missed = int(counter.get("missed", 0))
+                    print("COVERED: " + str(covered) + " MISSED: " + str(missed))
+                    if covered + missed > 0:
+                        coverage[counter_type.lower()] = (covered / (covered + missed)) * 100
+                else:
+                    if coverage["line"] is not None and coverage["branch"] is None:
+                        # case when branch coverage isn't in report because code has no branches that need covering
+                        coverage["branch"] = 100
+            return coverage
+
+        except Exception as e:
+            raise Exception(f"Error processing coverage report: {e}")
+            return {"line": None, "branch": None}
+    else:
+        raise Exception("Coverage report not found.")
+        return {"line": None, "branch": None}
+
+
+def process_java_files_and_run_test_analysis(
+        input_dir,
+        test_input_file_path,
+        src_dir=JAVA_SRC_DIR,
+        test_dir=JAVA_TEST_DIR,
+        project_dir=JAVA_PROJECT_ROOT,
+        timeout=30
+):
+    # Track copied files for cleanup later
+    copied_files = []
+    timeout_occurred = False
+    error = False
+    source_file_path = None
+    test_file_path = None
+    try:
+        print("INPUT FILE: ", test_input_file_path)
+        # Step 1: Copy .java files to the respective directories
+        v = os.listdir(input_dir)
+        print("DIR: ", input_dir, "DIR CONTENT: ", v)
+        for file_name in os.listdir(input_dir):
+            if file_name.endswith(".java"):
+                source_path = os.path.join(input_dir, file_name)
+                if file_name == os.path.basename(test_input_file_path):
+                    destination_path = os.path.join(test_dir, file_name)
+                    test_file_path = destination_path
+                else:
+                    destination_path = os.path.join(src_dir, file_name)
+                    source_file_path = destination_path
+                shutil.copy(source_path, destination_path)
+                copied_files.append(destination_path)
+
+
+        print("TEST FILE PATH: ", test_file_path)
+        print("SOURCE_FILE_PATH: ", source_file_path)
+        print("INPUT DIR: ", input_dir)
+        # Step 1.5: Run 'mvn test-compile' using the extracted method
+        compile_results = run_maven_test_compile(project_dir, timeout)
+        syntax_maven_output, syntax, compile_timeout_occurred, compile_error = compile_results
+
+        # Update the overall timeout and error status
+        timeout_occurred = timeout_occurred or compile_timeout_occurred
+        # error = error or compile_error
+
+        # Calculate assertion density and McCabe ratio
+        assertions_density = assertions_density_java(test_file_path)
+        print("Assertion density passed")
+        try:
+            mccabe = assertions_mccabe_ratio_java(source_file_path, test_file_path)
+        except Exception as e:
+            print("Error occurred during computation of McCabe ratio: ", e)
+            mccabe = None
+
+        if syntax != CompileStatus.OK:
+            # Cleanup copied files
+            return {
+                "execution_time_sec": None,
+                "line_coverage_percent": None,
+                "branch_coverage_percent": None,
+                "timeout_occurred": timeout_occurred,
+                "internal_error_occurred": error,
+                "syntax": syntax,
+                "syntax_maven_output": syntax_maven_output,
+                "assertion_density": assertions_density,
+                "assertions_mccabe_ratio": mccabe,
+                "runtime_errors": None,
+                "test_pass_rate": None,
+                "test_maven_output": None
+            }
+
+        # Run 'mvn clean test' using the extracted method
+        test_results = run_maven_clean_test(project_dir, timeout)
+        test_maven_output, test_timeout_occurred, test_error, execution_time = test_results
+        if test_error:
+            print("TEST ERROR")
+
+        # Update the overall timeout and error status
+        timeout_occurred = timeout_occurred or test_timeout_occurred
+        error = error or test_error
+
+        if timeout_occurred:
+            print("TIMEOUT")
+
+        # Parse test report and compute pass rate
+        pass_rate, runtime_errors = parse_report_and_compute_pass_rate(TEST_REPORTS)
+        if runtime_errors > 0:
+            print("RUNTIME ERROR")
+
+        # Compute coverage percentage using the extracted method
+        coverage_percentage = compute_coverage_percentage(project_dir, source_file_path, timeout_occurred)
+
+        # Cleanup copied files
+
+        return {
+            "execution_time_sec": execution_time,
+            "line_coverage_percent": coverage_percentage["line"],
+            "branch_coverage_percent": coverage_percentage["branch"],
+            "timeout_occurred": timeout_occurred,
+            "test_maven_output": test_maven_output,
+            "syntax_maven_output": syntax_maven_output,
+            "internal_error_occurred": error,
+            "syntax": syntax,
+            "runtime_errors": runtime_errors,
+            "test_pass_rate": pass_rate,
+            "assertion_density": assertions_density,
+            "assertions_mccabe_ratio": mccabe
+        }
+    finally:
+        for copied_file in copied_files:
+            os.remove(copied_file)
+
+
+# def validate_java_file_with_javac(file_path):
+#     try:
+#         # Run the javac command to compile the Java file
+#         result = subprocess.run(['javac', file_path], capture_output=True, text=True)
+#
+#         # Check the return code
+#         if result.returncode == 0:
+#             # Compilation was successful, so syntax is valid
+#             return CompileStatus.OK
+#         else:
+#             # Compilation failed, likely due to a syntax error
+#             print(f"Syntax Error in file {file_path}:\n\n\n\n\n\n{result.stderr}")
+#             return CompileStatus.SYNTAX_ERROR
+#
+#     except Exception as e:
+#         # Handle any other unexpected exceptions
+#         print(f"Exception occurred while validating file {file_path}: {e}")
+#         return CompileStatus.EXCEPTION_OCCURRED
+
+
+def parse_report_and_compute_pass_rate(test_reports):
     # Directory containing the XML report files
     print(os.getcwd())
-    report_files = glob.glob(TEST_REPORTS)
+    report_files = glob.glob(test_reports)
 
     total_tests = 0
     total_failures = 0
@@ -233,11 +346,15 @@ def parse_report_and_compute_pass_rate():
     return pass_percentage, total_runtime_errors
 
 
-#r = process_java_files_and_run_test_analysis(
-#    "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/java/deepseek_coder/24Game")
-#print(r)
+
+# r = process_java_files_and_run_test_analysis(
+#    "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Md5Implementation")
+# print(r)
 # results = validate_java_file_with_javac('data/generated/java/deepseek_coder/24Game/Game24Test.java')
 # print(results)
 # print("Execution Time:", results["execution_time_sec"], "seconds")
 # print("Coverage Percentage:", results["coverage_percentage"], "%")
 # print("Maven Output:", results["maven_output"])
+r = process_java_files_and_run_test_analysis("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Delegates",
+                                             "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Delegates/DelegateExampleTest.java")
+print(r)
