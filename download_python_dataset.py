@@ -112,6 +112,7 @@ def main():
         # Compute code length and line count
         filtered_df['code_length'] = filtered_df['code'].str.len()
         filtered_df['line_count'] = filtered_df['code'].apply(lambda x: len(x.split('\n')))
+
         if l == "Python":
             filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: check_syntax_string(x.replace('\u00A0', ' ')))
         if l == "Java":
@@ -153,6 +154,7 @@ def generate_tests(model, df, lang):
     elif model == Model.DEEPSEEK_CODER:
         model_string = "deepseek_coder"
         generate = generate_test_deepseek_coder
+
     else:
         raise ValueError("Invalid model specified.")
 

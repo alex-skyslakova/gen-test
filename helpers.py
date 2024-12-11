@@ -5,7 +5,6 @@ import os
 GENERATED_DIR="./data/generated/go/"
 STATS_DIR="./data/generated/stats/"
 
-
 def run_with_timeout(func, timeout):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future = executor.submit(func)
@@ -30,6 +29,7 @@ def save_generated_test(name: str, type: str, test: str, suffix):
         os.makedirs(directory)
 
     filename = os.path.join(directory, name_to_testfile(name, type, suffix))
+
     with open(filename, "w", encoding='utf-8') as file:
         file.write(test)
     return filename
