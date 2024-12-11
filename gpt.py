@@ -6,8 +6,9 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+env_key = os.getenv("OPENAI_API_KEY")
+print(env_key)
+client = OpenAI(api_key=env_key)
 
 from helpers import simplify, convert_to_filename
 from language import LanguageEnum

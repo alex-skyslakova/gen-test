@@ -7,14 +7,17 @@ from datasets import load_dataset
 from pandas import read_csv
 
 from go_analysis import analyze_go_tests
+from go_validation import validate_go_code_with_build
+from java_validation import validate_java_code
 from kotlin_analysis import analyze_kotlin_tests, run_ktlint
+from kotlin_validation import validate_kotlin_code
 from present_results import compute_metric_scores
 from python_assertion_ratios import assertions_density_python, assertions_mccabe_ratio_python
 from python_coverage_computation import get_coverage
 from deepseek import generate_test_deepseek_coder
 from gemini import generate_test_gemini_1_5_pro, generate_test_gemini_1_5_flash
 from gpt import generate_test_codex, generate_test_gpt35, generate_test_gpt4o_mini, generate_test_gpt4o
-from helpers import save_generated_test, save_content, read_generated_test
+from helpers import save_generated_test, save_content, read_generated_test, verify_required_env_vars
 from java_analysis import run_checkstyle, process_java_files_and_run_test_analysis
 from language import LanguageEnum
 from models import Model
@@ -28,59 +31,45 @@ GENERATED_DIR = "./data/generated/docs_python/"
 STATS_DIR = "./data/generated/docs_stats/"
 
 
-def download_and_validate_dataset():
-    dataset = {
-        "Python": read_csv("raw_python_dataset.csv"),
-        "Kotlin": read_csv("raw_kotlin_dataset.csv"),
-        "Java": read_csv("raw_java_dataset.csv"),
-        "Go": read_csv("raw_go_dataset.csv")
-    }
+def download_and_validate_dataset(use_existing_generated_data=True):
+    if use_existing_generated_data:
+        language_data_dict = {
+            "Python": read_csv("./data/raw/raw_python_dataset.csv"),
+            "Kotlin": read_csv("./data/raw/raw_kotlin_dataset.csv"),
+            "Java": read_csv("./data/raw/raw_java_dataset.csv"),
+            "Go": read_csv("./data/raw/raw_go_dataset.csv")
+        }
 
-    ds = load_dataset("christopher/rosetta-code")
-    train_df = ds.data['train'].to_pandas()
+    else:
+        ds = load_dataset("christopher/rosetta-code")
+        train_df = ds.data['train'].to_pandas()
 
-    lang_dfs = {}
-    for l in LANGUAGES_TO_KEEP:
-        lang_df = train_df[train_df['language_name'] == l]
-        lang_dfs[l] = lang_df
+        language_data_dict = {}
+        for lang in LANGUAGES_TO_KEEP:
+            filtered_df = train_df[train_df['language_name'] == lang]
+            filtered_df['code_length'] = filtered_df['code'].str.len()
+            filtered_df['line_count'] = filtered_df['code'].apply(lambda x: len(x.split('\n')))
+            if lang == "Python":
+                filtered_df["code_syntax"] = filtered_df["code"].apply(
+                    lambda x: check_syntax_string(x.replace('\u00A0', ' ')))
+            if lang == "Java":
+                filtered_df["code_syntax"] = filtered_df["code"].apply(
+                    lambda x: validate_java_code(x.replace('\u00A0', ' ')))
+            if lang == "Kotlin":
+                filtered_df["code_syntax"] = filtered_df["code"].apply(
+                    lambda x: validate_kotlin_code(x.replace('\u00A0', ' ')))
+            if lang == "Go":
+                filtered_df["code_syntax"] = filtered_df["code"].apply(
+                    lambda x: validate_go_code_with_build(x.replace('\u00A0', ' ')))
 
-    # Update the PATH inside the script
-    os.environ["PATH"] += os.pathsep + "/usr/local/golang/bin"
+            filtered_df.to_csv("./data/raw/raw_" + lang.lower() + "_dataset.csv") # TODO save to data folder
+            language_data_dict[lang] = filtered_df
 
-    # dict_per_language = {}
-    # for l, filtered_df in lang_dfs.items():
-    #     filtered_df['code_length'] = filtered_df['code'].str.len()
-    #     filtered_df['line_count'] = filtered_df['code'].apply(lambda x: len(x.split('\n')))
-    #     if l == "Python":
-    #         filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: check_syntax_string(x.replace('\u00A0', ' ')))
-    #     if l == "Java":
-    #         filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: validate_java_code(x.replace('\u00A0', ' ')))
-    #     if l == "Kotlin":
-    #         filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: validate_kotlin_code(x.replace('\u00A0', ' ')))
-    #     if l == "Go":
-    #         filtered_df["code_syntax"] = filtered_df["code"].apply(lambda x: validate_go_code_with_build(x.replace('\u00A0', ' ')))
-    #
-    #     filtered_df.to_csv("raw_" + l.lower() + "_dataset.csv")
-    dict_per_language = {}
-    for l, filtered_df in dataset.items():
+    lang_dict_correct_syntax = {}
+    for lang, filtered_df in language_data_dict.items():
+        lang_dict_correct_syntax[lang] = filtered_df[(filtered_df["code_syntax"] == 'CompileStatus.OK')]
 
-        # Print the statistics of the "code_syntax" column
-        syntax_stats = filtered_df["code_syntax"].value_counts()
-
-        # Print the results
-        print("Code Syntax Statistics: " + l + ":")
-        for status, count in syntax_stats.items():
-            print(f"{status}: {count} occurrences")
-
-        # Optionally, you could print percentages as well
-        total = filtered_df["code_syntax"].count()
-        print("\nCode Syntax Percentage Statistics:")
-        for status, count in syntax_stats.items():
-            percentage = (count / total) * 100
-            print(f"{status}: {percentage:.2f}%")
-
-        dict_per_language[l] = filtered_df[(filtered_df["code_syntax"] == 'CompileStatus.OK')]
-    return dict_per_language
+    return lang_dict_correct_syntax
 
 
 def filter_dataset(dict_per_language, size=200):
@@ -89,7 +78,7 @@ def filter_dataset(dict_per_language, size=200):
         syntactically_correct[l] = df.loc[(df["code_syntax"] == "CompileStatus.OK")]
 
     common_tasks = functools.reduce(
-        lambda x, y: x & y,  # set intersection
+        lambda x, y: x & y, # set intersection
         [set(df['task_name']) for df in syntactically_correct.values()]  # list of task_name sets for each language
     )
 
@@ -100,29 +89,24 @@ def filter_dataset(dict_per_language, size=200):
         filtered_dict[l].to_csv(os.path.join(STATS_DIR, "filtered_" + l + ".csv"), index=False, header=True)
     return filtered_dict
 
-def generate_tests(model, df, lang):
+
+def generate_tests(model: Model, df: pd.DataFrame, lang: LanguageEnum):
     if model == Model.GPT_3_5_turbo:
-        model_string = "gpt_3_5_turbo"
         generate = generate_test_gpt35
     elif model == Model.GPT_4o_mini:
-        model_string = "gpt_4o_mini"
         generate = generate_test_gpt4o_mini
     elif model == Model.GPT_4o:
-        model_string = "gpt_4o_2024_08_06"
         generate = generate_test_gpt4o
     elif model == Model.GEMINI_1_5_pro:
-        model_string = "gemini_1_5_pro_002"
         generate = generate_test_gemini_1_5_pro
     elif model == Model.GEMINI_1_5_flash:
-        model_string = "gemini_1_5_flash_002"
         generate = generate_test_gemini_1_5_flash
     elif model == Model.DEEPSEEK_CODER:
-        model_string = "deepseek_coder"
         generate = generate_test_deepseek_coder
-
     else:
         raise ValueError("Invalid model specified.")
 
+    model_string = model.value
     generated_codes = []
     filenames = []
     for index, row in df.copy(deep=True).iterrows():
@@ -283,7 +267,7 @@ def run_analysis_java(df, model_string, lang):
 
     for index, row in df.copy(deep=True).iterrows():
         count += 1
-        #try:
+        # try:
         file_path = row['file_path']
         print("FIle path from csv: ", file_path)
         if isinstance(file_path, float) or file_path is None:
@@ -583,35 +567,35 @@ def run_analysis_python(df, model_string, lang):
 
     return df
 
+
 if __name__ == '__main__':
-    # df = read_csv(
-    #     "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/filtered_Python_stats_deepseek_coder.csv")
-    #
-    # run_analysis(LanguageEnum.Python, df, "deepseek_coder'")
+    required_env_vars = []
+    all_env_vars_set = verify_required_env_vars(required_env_vars)
+    if not all_env_vars_set:
+        exit(1)
 
-    # dataset = download_and_validate_dataset()
-    # or
-    languages = []
-    dataset = {
-        "Python": read_csv("raw_python_dataset.csv"),
-        "Kotlin": read_csv("raw_kotlin_dataset.csv"),
-        "Java": read_csv("raw_java_dataset.csv"),
-        "Go": read_csv("raw_go_dataset.csv")
-    }
-
+    languages = [LanguageEnum.Kotlin]
+    dataset = download_and_validate_dataset()
     filtered = filter_dataset(dataset)
-    print(filtered)
-    filtered[LanguageEnum.Kotlin.name]["docs_length"] = filtered[LanguageEnum.Kotlin.name]['task_description'].str.len()
+
+
 
     ALL = False
-    if ALL:
+    ONLY_ANALYSIS = True
+    if ONLY_ANALYSIS:
+        for l in languages:
+            for m in [Model.GPT_4o, Model.GEMINI_1_5_pro, Model.DEEPSEEK_CODER]:
+                generated_df = read_csv("data/generated/docs_stats/filtered_{}_stats_{}.csv".format(l.name, m.value))
+                run_analysis(l, generated_df, m.value)
+    elif ALL:
         for l in languages:
             for m in Model:
-                generate_tests(m, filtered[l.name], l)
+                generated_df = generate_tests(m, filtered[l.name], l)
+                run_analysis(l, generated_df, m.value)
     else:
         language = LanguageEnum.Python
         model = Model.GPT_4o
-        #generated_df = generate_tests(model, filtered[language.name], language)
+        # generated_df = generate_tests(model, filtered[language.name], language)
         generated_df = read_csv("data/generated/docs_stats/filtered_Python_stats_gpt_4o_2024_08_06.csv")
         run_analysis_python(generated_df, model.value, language)
-        # print("acb")
+    #analyze_go_tests("data/generated/docs_golang/list_rooted_trees/list_rooted_trees.go", "data/generated/docs_golang/list_rooted_trees/deepseek_coder_list_rooted_trees_test.go")

@@ -26,10 +26,13 @@ def count_assertions_in_python_file(filename):
     counter.visit(tree)
     return counter.count
 
+def compute_complexity(codepath):
+    result = lizard.analyze_file(codepath)
+    return sum([f.cyclomatic_complexity for f in result.function_list])
+
 
 def assertions_mccabe_ratio_python(codepath, testpath):
-    result = lizard.analyze_file(codepath)
-    complexity = sum([f.cyclomatic_complexity for f in result.function_list])
+    complexity = compute_complexity(codepath)
 
     assertions_count = count_assertions_in_python_file(testpath)
     print("assertions: ", assertions_count)

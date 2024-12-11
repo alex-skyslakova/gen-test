@@ -23,6 +23,8 @@ def check_syntax(file):
     """Check Go code syntax using go vet and analyze types of warnings."""
     try:
         # Run 'go build' to validate syntax (this does not produce a binary)
+        print(os.getcwd())
+        print("running go build for file: ", file)
         result = subprocess.run(['go', 'build', file],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -45,14 +47,17 @@ def check_for_warnings(project_dir, tests=True):
 
         print("Running go vet...")
         # Run the go vet command and capture output
+        print("cwd:", os.getcwd())
+        print("content:", os.listdir())
+        print("passed to command: ", project_dir)
         process = subprocess.Popen(
             vet_cmd,
-            cwd=project_dir,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True  # Ensures the output is in string format
         )
+        print("done with go vet")
         stdout, stderr = process.communicate()
 
         output = stderr.strip()
@@ -242,27 +247,33 @@ def run_tests(project_dir):
 def analyze_go_tests(go_file_path, test_file_path):
     """Create a temporary folder, move the Go file and test file, and run tests."""
     # Create a temporary directory within "/data/generated/golang/"
-    base_temp_dir = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/"
+    print(os.getcwd())
+    base_temp_dir = "./data/generated/docs_golang/"
     os.makedirs(base_temp_dir, exist_ok=True)
     temp_dir = tempfile.mkdtemp(dir=base_temp_dir)
+    print("temporary:", temp_dir)
 
     # Save the current working directory
     original_cwd = os.getcwd()
+    print("Current>", original_cwd)
 
     try:
         # Copy the Go file and the specified test file to the temporary directory
         new_go_file_path = shutil.copy(go_file_path, temp_dir)
+        print("New go file:", new_go_file_path)
         new_test_file_path = shutil.copy(test_file_path, temp_dir)
+        print("New test file:", new_test_file_path)
+
 
         # Change to temporary directory
         os.chdir(temp_dir)
 
         # Check syntax
-        syntax_build = check_syntax(os.path.join(temp_dir, os.path.basename(test_file_path)))
+        syntax_build = check_syntax(os.path.basename(test_file_path))
         syntax_vet, warnings = check_for_warnings(temp_dir)
         syntax = determine_syntax_result(syntax_build, syntax_vet)
-        assertions_density = assertions_density_go(new_test_file_path)
-        mccabe = assertions_mccabe_ratio_go(new_go_file_path, new_test_file_path)
+        assertions_density = assertions_density_go(os.path.basename(test_file_path))
+        mccabe = assertions_mccabe_ratio_go(os.path.basename(new_go_file_path), os.path.basename(new_test_file_path))
         print("Syntax build: ", syntax_build)
         print("Syntax vet: ", syntax_vet)
         print("Final syntax: ", syntax)
@@ -287,7 +298,7 @@ def analyze_go_tests(go_file_path, test_file_path):
             }
 
         # Run tests and get results
-        test_results = run_tests(temp_dir)
+        test_results = run_tests(".")
 
         if test_results:
             test_results["warnings"] = warnings
@@ -384,8 +395,8 @@ def determine_syntax_result(build, vet):
 
 if __name__ == "__main__":
     # Paths to your Go file and the specific test file
-    go_file = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/abbreviations_automatic/abbreviations_automatic.go"
-    test_file = "data/generated/golang/abbreviations_automatic/gemini_1_5_flash_002_abbreviations_automatic_test.go"
+    # go_file = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/abbreviations_automatic/abbreviations_automatic.go"
+    # test_file = "data/generated/golang/abbreviations_automatic/gemini_1_5_flash_002_abbreviations_automatic_test.go"
 
     #build_project("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/tmp1v_oax0s")
-    analyze_go_tests(go_file, test_file)
+    check_for_warnings("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_golang/list_rooted_trees")

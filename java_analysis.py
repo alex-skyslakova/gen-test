@@ -206,6 +206,7 @@ def process_java_files_and_run_test_analysis(
         v = os.listdir(input_dir)
         print("DIR: ", input_dir, "DIR CONTENT: ", v)
         for file_name in os.listdir(input_dir):
+            print("List dir: ", file_name)
             if file_name.endswith(".java"):
                 source_path = os.path.join(input_dir, file_name)
                 if file_name == os.path.basename(test_input_file_path):
@@ -355,6 +356,6 @@ def parse_report_and_compute_pass_rate(test_reports):
 # print("Execution Time:", results["execution_time_sec"], "seconds")
 # print("Coverage Percentage:", results["coverage_percentage"], "%")
 # print("Maven Output:", results["maven_output"])
-r = process_java_files_and_run_test_analysis("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Delegates",
-                                             "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Delegates/DelegateExampleTest.java")
-print(r)
+# r = process_java_files_and_run_test_analysis("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Delegates",
+#                                              "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Delegates/DelegateExampleTest.java")
+# print(r)

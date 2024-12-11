@@ -239,7 +239,28 @@ def make_private_java_methods_public(df, code_column):
 
     return df
 
-df = pd.read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv")
-df = make_private_java_methods_public(df, "code")
-print(df)
-df.to_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/test_filtered_Java_stats_gpt_4o_2024_08_06.csv", index=False)
+def verify_required_env_vars(required_env_vars):
+    """
+    Verify that all required environment variables contain non-empty values.
+    """
+    missing_or_empty_keys = []
+
+    for key in required_env_vars:
+        value = os.getenv(key)
+        if not value:  # Check if the value is None or empty
+            missing_or_empty_keys.append(key)
+
+    if missing_or_empty_keys:
+        print("The following environment variables are missing or empty:")
+        for key in missing_or_empty_keys:
+            print(f"- {key}")
+        return False
+
+    print("All required API key environment variables are set.")
+    return True
+
+#
+# df = pd.read_csv("data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv")
+# df = make_private_java_methods_public(df, "code")
+# print(df)
+# df.to_csv("data/generated/docs_stats/test_filtered_Java_stats_gpt_4o_2024_08_06.csv", index=False)

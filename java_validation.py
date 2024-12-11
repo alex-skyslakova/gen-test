@@ -1,7 +1,6 @@
 import javalang
 
 from helpers import convert_to_java_filename
-from java_analysis import validate_java_file_with_javac
 from python_validation import CompileStatus
 import subprocess
 import tempfile

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from helpers import simplify
 
-CONVERSATION_DIR = "./conversations/"
+CONVERSATION_DIR = "./data/conversations/"
 
 
 def log_conversation(name, model, temperature, messages, output, lang, total_tokens=None, prompt_tokens=None, completion_tokens=None, dir=CONVERSATION_DIR):

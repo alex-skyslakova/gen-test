@@ -124,7 +124,7 @@ def analyze_python_warnings(paths):
         plt.savefig("./data/plots/python_code_quality_{}.png".format(type))
         plt.show()
 
-#
+
 # analyze_python_warnings(["/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Python_stats_deepseek_coder.csv",
 #                          "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Python_stats_gemini_1_5_pro_002.csv",
 #                          "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Python_stats_gpt_4o_2024_08_06.csv"])
