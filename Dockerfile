@@ -8,8 +8,20 @@ ENV PATH="$KOTLIN_HOME/bin:$PATH"
 
 # Install required system dependencies
 RUN apt-get update && apt-get install -y \
-    curl wget git unzip tar maven && \
+    curl wget git unzip tar && \
     apt-get clean
+
+# Install Maven 3.9.6
+RUN wget https://downloads.apache.org/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz && \
+    tar -C /usr/local -xzf apache-maven-3.9.6-bin.tar.gz && \
+    rm apache-maven-3.9.6-bin.tar.gz && \
+    ln -s /usr/local/apache-maven-3.9.6 /usr/local/maven && \
+    echo "export MAVEN_HOME=/usr/local/maven" >> ~/.bashrc && \
+    echo "export PATH=$MAVEN_HOME/bin:$PATH" >> ~/.bashrc
+
+# Set environment variables for Maven
+ENV MAVEN_HOME=/usr/local/maven
+ENV PATH="$MAVEN_HOME/bin:$PATH"
 
 # Install Go 1.23.3
 RUN wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz && \

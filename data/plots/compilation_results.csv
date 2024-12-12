@@ -1,0 +1,13 @@
+Language-LLM_Model,Faulty Code In Response,Could Not Generate Test,Passed Compilation and Runtime,Failed on Runtime,Failed on Compilation/Syntax
+Python gpt_4o_2024_08_06,2,1,188,8,1
+Python gemini_1_5_pro_002,0,0,185,11,4
+Python deepseek_coder,3,10,173,10,4
+Java gpt_4o_2024_08_06,7,0,108,6,79
+Java gemini_1_5_pro_002,0,0,86,18,96
+Java deepseek_coder,2,18,87,10,83
+Kotlin gpt_4o_2024_08_06,2,2,133,9,54
+Kotlin gemini_1_5_pro_002,29,0,116,9,46
+Kotlin deepseek_coder,13,18,48,5,116
+Go gpt_4o_2024_08_06,17,5,107,10,61
+Go gemini_1_5_pro_002,0,0,86,7,107
+Go deepseek_coder,4,32,110,6,48
