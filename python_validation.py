@@ -37,6 +37,3 @@ def check_syntax_string(code_string) -> CompileStatus:
     except Exception as e:
         print(f"An error occurred: {e}")
         return CompileStatus.EXCEPTION_OCCURRED
-
-if __name__ == '__main__':
-    print(check_syntax_file("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/tttttttttt.py"))

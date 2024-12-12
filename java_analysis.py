@@ -179,10 +179,10 @@ def compute_coverage_percentage(project_dir, src_file_path, timeout_occurred):
             return coverage
 
         except Exception as e:
-            raise Exception(f"Error processing coverage report: {e}")
+            print(f"Error processing coverage report: {e}")
             return {"line": None, "branch": None}
     else:
-        raise Exception("Coverage report not found.")
+        print("Coverage report not found.")
         return {"line": None, "branch": None}
 
 
@@ -345,17 +345,3 @@ def parse_report_and_compute_pass_rate(test_reports):
     total_passed = total_tests - total_failures - total_skipped
     pass_percentage = (total_passed / total_tests) * 100 if total_tests != 0 else None
     return pass_percentage, total_runtime_errors
-
-
-
-# r = process_java_files_and_run_test_analysis(
-#    "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Md5Implementation")
-# print(r)
-# results = validate_java_file_with_javac('data/generated/java/deepseek_coder/24Game/Game24Test.java')
-# print(results)
-# print("Execution Time:", results["execution_time_sec"], "seconds")
-# print("Coverage Percentage:", results["coverage_percentage"], "%")
-# print("Maven Output:", results["maven_output"])
-# r = process_java_files_and_run_test_analysis("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Delegates",
-#                                              "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_java/gpt_4o_2024_08_06/Delegates/DelegateExampleTest.java")
-# print(r)

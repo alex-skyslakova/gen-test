@@ -1,5 +1,4 @@
 import concurrent.futures
-import os
 import re
 
 import pandas as pd
@@ -219,25 +218,6 @@ def rename_java_files(base_dir):
                 else:
                     print(f"No public class found in '{file_path}', skipping.")
 
-
-def make_private_java_methods_public(df, code_column):
-    import re
-
-    def modify_code(code):
-        """
-        Modifies the given Java source code by replacing private method declarations
-        with public method declarations.
-        """
-        # Regular expression to match `private` methods and replace them with `public`
-        method_pattern = r"private\s+([\w<>\[\]]+\s+\w+\s*\([^)]*\)\s*\{)"
-        modified_code = re.sub(method_pattern, r"public \1", code)
-        return modified_code
-
-    # Apply modification for each row in the specified column
-    df[code_column + "_copy"] = df[code_column]
-    df[code_column] = df[code_column].apply(modify_code)
-
-    return df
 
 def verify_required_env_vars(required_env_vars):
     """

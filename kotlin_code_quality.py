@@ -4,6 +4,7 @@ from helpers import extract_llm_model
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
 def categorize_kotlin_warnings(warnings):
     # Define the categories and their associated rules
     categories = {
@@ -69,6 +70,7 @@ def categorize_kotlin_warnings(warnings):
                 break
 
     return category_counts
+
 
 def analyze_code_quality_kotlin(paths):
     analysis = pd.DataFrame(

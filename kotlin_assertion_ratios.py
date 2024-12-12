@@ -62,7 +62,3 @@ def assertions_density_kotlin(file_path):
     sloc = get_sloc(file_path)
     return round(assertions_count / sloc, 2) if sloc != 0 else None
 
-
-if __name__ == "__main__":
-    file = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/kotlin/FibonacciWordFractal/Gpt4o20240806FibonacciWordFractalTest.kt"
-    print(count_assertions_in_kotlin_file(file))

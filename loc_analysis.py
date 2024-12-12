@@ -6,5 +6,3 @@ def get_sloc(file):
     if result is None or not result.is_countable:
         return None
     return result.code_count
-
-

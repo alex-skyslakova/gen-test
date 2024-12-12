@@ -1,7 +1,5 @@
 import os
 import shutil
-import time
-import xml.etree.ElementTree as ET
 import subprocess
 
 from java_analysis import run_maven_test_compile, run_maven_clean_test, compute_coverage_percentage, \
@@ -28,11 +26,11 @@ def run_ktlint(kotlin_file_path):
         )
 
         if result.stdout:
-            print("ktlint output:")
+            print("ktlint.jar output:")
             print(result.stdout)
 
         if result.stderr:
-            print("ktlint error output:")
+            print("ktlint.jar error output:")
             print(result.stderr)
 
         # Combine both stdout and stderr for processing
@@ -40,16 +38,16 @@ def run_ktlint(kotlin_file_path):
         warnings = parse_ktlint_output(output)
 
         if warnings:
-            print("Found ktlint warnings:")
+            print("Found ktlint.jar warnings:")
             for error in warnings:
                 print(error)
         else:
-            print("No ktlint issues found for this file.")
+            print("No ktlint.jar issues found for this file.")
 
         return warnings
 
     except Exception as e:
-        print(f"Error running ktlint: {e}")
+        print(f"Error running ktlint.jar: {e}")
         return []
 
 
@@ -95,64 +93,6 @@ def parse_ktlint_output(output):
         "errors": errors,
         "rule_summary": dict(rule_summary)
     }
-
-
-# def process_kotlin_files_and_run_tests(
-#         input_dir,
-#         test_input_file_path,
-#         src_dir=KOTLIN_SRC_DIR,
-#         test_dir=KOTLIN_TEST_DIR,
-#         project_dir=KOTLIN_PROJECT_ROOT,
-#         timeout=30
-# ):
-#     copied_files = []
-#     timeout_occurred = False
-#     error = False
-#     new_source_path = None
-#     new_test_path = None
-#
-#     try:
-#
-#         # Step 1: Copy .kt files to the respective directories
-#         for file_name in os.listdir(input_dir):
-#             if file_name.endswith(".kt"):
-#                 source_path = os.path.join(input_dir, file_name)
-#                 if file_name == os.path.basename(test_input_file_path):
-#                     destination_path = os.path.join(test_dir, file_name)
-#                     new_test_path = destination_path
-#                 else:
-#                     destination_path = os.path.join(src_dir, file_name)
-#                     new_source_path = destination_path
-#                 shutil.copy(source_path, destination_path)
-#                 copied_files.append(destination_path)
-#
-#         # Step 2: Run 'mvn clean test' with a timeout
-#         start_time = time.time()
-#         try:
-#             result = subprocess.run(['mvn', 'clean', 'test'], cwd=project_dir, capture_output=True, text=True,
-#                                     timeout=timeout)
-#             maven_output = result.stdout
-#         except subprocess.TimeoutExpired:
-#             timeout_occurred = True
-#             maven_output = "Test execution timed out."
-#         end_time = time.time()
-#
-#         # Step 3: Parse JaCoCo report for coverage percentage
-#         coverage = compute_coverage_percentage(project_dir, new_source_path, timeout_occurred)
-#
-#         # Step 4: Calculate execution time
-#         execution_time = end_time - start_time
-#
-#         return {
-#             "execution_time_sec": execution_time,
-#             "line_coverage_percent": coverage["line"],
-#             "branch_coverage_percent": coverage["branch"],
-#             "timeout_occurred": timeout_occurred,
-#             "maven_output": maven_output
-#         }
-#     finally:
-#         for copied_file in copied_files:
-#             os.remove(copied_file)
 
 
 def get_code_file_path(test_file_path):

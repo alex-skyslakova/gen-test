@@ -4,7 +4,6 @@ import signal
 import subprocess
 import threading
 import time
-
 import pytest
 
 
@@ -70,11 +69,3 @@ def get_coverage(filename, branch=False):
     else:
         print("Coverage report not found.")
         return None
-
-    print("==========COVERAGE END")
-    return round(0, 2)
-
-if __name__ == '__main__':
-    coverage_percentage = get_coverage(filename="/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/python/flipping_bits_game/test_gemini_1_5_flash_002_flipping_bits_game.py")
-    if coverage_percentage is not None:
-        print(f"Test Coverage: {coverage_percentage}%")

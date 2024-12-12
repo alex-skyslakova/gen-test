@@ -2,6 +2,7 @@ import pytest
 import signal
 from functools import wraps
 
+
 def timeout(seconds=60, error_message="Test execution timed out"):
     """Timeout decorator to abort a function if it takes too long."""
     def decorator(func):
@@ -17,10 +18,9 @@ def timeout(seconds=60, error_message="Test execution timed out"):
             finally:
                 signal.alarm(0)  # Disable the alarm
             return result
-
         return wrapper
-
     return decorator
+
 
 @timeout(seconds=60)
 def run_tests_and_compute_pass_rate(test_directory):
@@ -63,6 +63,3 @@ def run_tests_and_compute_pass_rate(test_directory):
         'failed_tests': test_result.failed,
         'pass_percentage': pass_percentage
     }
-
-# Example usage:
-test_directory = "path/to/your/tests_directory"

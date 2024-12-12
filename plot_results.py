@@ -1,76 +1,13 @@
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-# from scipy.stats import pearsonr
-#
-# # Load the CSV file
-# file_path = '/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/conversations/abc.csv'  # Replace with your file path
-# df = pd.read_csv(file_path)
-#
-# # Descriptive Statistics
-# statistics = df.describe()
-#
-# # Correlation and P-Value Matrix
-# columns = df.columns
-# correlation_pval_matrix = pd.DataFrame(index=columns, columns=columns)
-#
-# for col1 in columns:
-#     for col2 in columns:
-#         corr, pval = pearsonr(df[col1], df[col2])
-#         correlation_pval_matrix.loc[col1, col2] = (round(corr, 3), round(pval, 3))
-#
-# # Display Statistics and Correlation with P-values
-# print("Descriptive Statistics:")
-# print(statistics)
-# print("\nCorrelation and P-Value Matrix:")
-# print(correlation_pval_matrix)
-#
-# # Visualizations
-#
-# # 1. Bar Plot for Mean Scores
-# mean_scores = df.mean()
-# plt.figure(figsize=(8, 5))
-# mean_scores.plot(kind='bar', color='skyblue', edgecolor='black')
-# plt.title("Mean Scores for LLMs", fontsize=16)
-# plt.ylabel("Mean Score", fontsize=12)
-# plt.xlabel("LLM Model", fontsize=12)
-# plt.xticks(rotation=0)
-# plt.grid(axis='y', linestyle='--', alpha=0.7)
-# plt.show()
-#
-# # 2. Box Plot for Score Distributions
-# plt.figure(figsize=(8, 5))
-# df.boxplot(column=list(df.columns), grid=False, patch_artist=True)
-# plt.title("Score Distributions for LLMs", fontsize=16)
-# plt.ylabel("Score", fontsize=12)
-# plt.xlabel("LLM Model", fontsize=12)
-# plt.grid(axis='y', linestyle='--', alpha=0.7)
-# plt.show()
-#
-# # 3. Heatmap for Correlation Matrix
-# # Convert correlation matrix to numerical values for heatmap
-# numeric_corr_matrix = df.corr()
-#
-# plt.figure(figsize=(6, 5))
-# sns.heatmap(numeric_corr_matrix, annot=True, cmap="coolwarm", cbar=True, fmt=".2f", square=True)
-# plt.title("Correlation Heatmap of LLM Scores", fontsize=16)
-# plt.show()
 import math
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-
-# List of input files and columns to process
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 import re
 
-from python_validation import CompileStatus
+from config import Config
 
 # Input files
 input_files = [
@@ -94,68 +31,12 @@ columns_to_select = [
     'runtime_errors_score', 'line_coverage_score', 'branch_coverage_score',
     'execution_time_score', 'assertions_mccabe_ratio_score',
     'assertions_density_score', 'warnings_count_score'
-    # ,'timeout_occurred', 'execution_time_sec', 'task_name',
 ]
 
 group_columns = ["language_name", "llm_model"]  # Columns to group by
 
-# Combine data from all files
-#combined_df = pd.DataFrame()
-
-# for file in input_files:
-#     try:
-#         # Load the CSV file
-#         df = pd.read_csv(file)
-#         print(f"Processing {file}...")
-#         print(f"Columns in {file}: {df.columns}")
-#
-#         # Extract the LLM model from the file name using regex
-#         llm_model_match = re.search(r"stats_(\w+)", os.path.basename(file))
-#         llm_model = llm_model_match.group(1) if llm_model_match else "Unknown"
-#
-#         # Add the LLM model as a column
-#         df['llm_model'] = llm_model
-#
-#         # Check if required columns exist
-#         if not all(col in df.columns for col in columns_to_select):
-#             print(f"Skipping file {file}: Required columns not found.")
-#             continue
-#
-#         # Select only the necessary columns
-#         df = df[columns_to_select + ['llm_model']]
-#
-#         # Append data to the combined DataFrame
-#         combined_df = pd.concat([combined_df, df], ignore_index=True)
-#     except Exception as e:
-#         print(f"Error processing file {file}: {e}")
-#
-# # Check if there is any data to process
-# if combined_df.empty:
-#     print("No valid data found in input files.")
-# else:
-# combined_df = pd.read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/combined_stats.csv")
-# # Group by language and llm and compute median and mean
-# combined_df = combined_df[columns_to_select + ['llm_model']]
-# combined_df['total_score'] = combined_df.select_dtypes(include=['number']).sum(axis=1)
-#
-#
-# grouped = combined_df.groupby(group_columns)
-# grouped_medians = grouped.median()
-# grouped_means = grouped.mean()
-#
-# # Plot the median heatmap
-# plt.figure(figsize=(20, 20))
-# ax = sns.heatmap(grouped_medians, annot=True, cmap="YlOrBr", cbar=True, fmt=".2f", annot_kws={"size": 25})
-# plt.title("Heatmap of Medians by LLM-Language", fontsize=25)
-# plt.ylabel("LLM-Language Tuple", fontsize=30)
-# plt.xlabel("Metrics", fontsize=30)
-# ax.tick_params(axis='x', labelsize=25)
-# ax.tick_params(axis='y', labelsize=25)
-# plt.tight_layout()
-# plt.show()
-
 def plot_all_metrics_heatmap():
-    combined_df = pd.read_csv("data/generated/docs_stats/combined_stats.csv")
+    combined_df = pd.read_csv(os.path.join(Config.get_stats_output_dir(), "combined_stats.csv"))
 
     # Define column names
     first_three_columns = ['correct_response_score', 'compilation_status_score',
@@ -234,11 +115,6 @@ def plot_all_metrics_heatmap():
     plt.tight_layout()
     plt.savefig("data/plots/all_metrics_mean.png")
     plt.show()
-
-import os
-import re
-import pandas as pd
-import matplotlib.pyplot as plt
 
 
 
@@ -405,7 +281,7 @@ def analyze_timeout(files):
     plt.tight_layout()
     plt.savefig("data/plots/timeout.png")
 
-    plt.show()
+    plt.show() # TODO REMOVE
     # Plotting the mean execution times
     plt.figure(figsize=(10, 6))
     bars = plt.bar(exec_time_df['analysis'], exec_time_df['execution_time_sec'], color='green')
@@ -430,7 +306,7 @@ def analyze_timeout(files):
     plt.savefig("data/plots/time_exec_mean.png")
 
     # Show the plot
-    plt.show()
+    plt.show() # TODO REMOVE
 
 
 def plot_coverage(files):
@@ -511,7 +387,7 @@ def plot_coverage(files):
         plt.xlabel("Metrics", fontsize=20)
         plt.tight_layout()
         plt.savefig("data/plots/coverage_median_heatmap")
-        plt.show()
+        plt.show() # TODO REMOVE
 
         # Assuming you already have the `grouped_medians` DataFrame and a column `language_name`
         mask = np.zeros(grouped_means.shape, dtype=bool)  # Start with all False
@@ -537,7 +413,7 @@ def plot_coverage(files):
         plt.xlabel("Metrics", fontsize=20)
         plt.tight_layout()
         plt.savefig("data/plots/coverage_mean_heatmap")
-        plt.show()
+        plt.show() # TODO REMOVE
         #
         # # Plot the mean heatmap
         # plt.figure(figsize=(12, 15))
@@ -552,11 +428,14 @@ def plot_coverage(files):
         # plt.show()
 
 
-#plot_all_metrics_heatmap()
-# analyze_and_plot_with_model(input_files)
-# analyze_timeout(input_files)
-# plot_coverage(["/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/combined_stats.csv"])
 
+def present_results_as_plots():  # TODO add choice between DP stats and own stats
+    plot_all_metrics_heatmap()
+    analyze_and_plot_with_model(input_files)
+    analyze_timeout(input_files)
+    plot_coverage([os.path.join(Config.get_stats_output_dir(), "combined_stats.csv")])
+
+present_results_as_plots()
 # for file in input_files:
 #     columns_to_keep = ["task_name", "task_description", "language_name", "code", "code_length", "line_count", "generated_code", "file_path", "compilation_status", "runtime_errors_count", "line_coverage_percent", "branch_coverage_percent", "assertions_density", "assertions_mccabe_ratio", "tests_pass_percentage", "execution_time_sec", "warnings_count", "warnings", "timeout_occurred", "internal_error_occurred", "syntax_failure_cause", "syntax_maven_output", "test_maven_output"]
 #     print(file)
