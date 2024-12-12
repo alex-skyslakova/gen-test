@@ -1,13 +1,15 @@
+import glob
 import re
 
-import pandas as pd
-
+from config import Config
 from python_validation import CompileStatus
 
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+
+
 def analyze_csv_and_plot_columns(file_paths):
     """
     Analyze the 'generated_code' column in multiple CSV files and create a grouped bar chart.
@@ -133,28 +135,21 @@ def find_csv_files_with_word(directory, word):
         print(f"Error while searching for files: {e}")
 
     return matching_files
-
-
-# # Example usage
-# directory_path = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats"
-# search_word = "_stats_"
-# csv_files = find_csv_files_with_word(directory_path, search_word)
 #
-
-input_files = [
-    'data/generated/docs_stats/filtered_Python_stats_gpt_4o_2024_08_06.csv',
-    'data/generated/docs_stats/filtered_Python_stats_gemini_1_5_pro_002.csv',
-    'data/generated/docs_stats/filtered_Python_stats_deepseek_coder.csv',
-    'data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv',
-    'data/generated/docs_stats/filtered_Java_stats_gemini_1_5_pro_002.csv',
-    'data/generated/docs_stats/filtered_Java_stats_deepseek_coder.csv',
-    'data/generated/docs_stats/filtered_Kotlin_stats_gpt_4o_2024_08_06.csv',
-    'data/generated/docs_stats/filtered_Kotlin_stats_gemini_1_5_pro_002.csv',
-    'data/generated/docs_stats/filtered_Kotlin_stats_deepseek_coder.csv',
-    'data/generated/docs_stats/filtered_Go_stats_gpt_4o_2024_08_06.csv',
-    'data/generated/docs_stats/filtered_Go_stats_gemini_1_5_pro_002.csv',
-    'data/generated/docs_stats/filtered_Go_stats_deepseek_coder.csv',
-]
+# input_files = [
+#     'filtered_Python_stats_gpt_4o_2024_08_06.csv',
+#     'filtered_Python_stats_gemini_1_5_pro_002.csv',
+#     'filtered_Python_stats_deepseek_coder.csv',
+#     'filtered_Java_stats_gpt_4o_2024_08_06.csv',
+#     'filtered_Java_stats_gemini_1_5_pro_002.csv',
+#     'filtered_Java_stats_deepseek_coder.csv',
+#     'filtered_Kotlin_stats_gpt_4o_2024_08_06.csv',
+#     'filtered_Kotlin_stats_gemini_1_5_pro_002.csv',
+#     'filtered_Kotlin_stats_deepseek_coder.csv',
+#     'filtered_Go_stats_gpt_4o_2024_08_06.csv',
+#     'filtered_Go_stats_gemini_1_5_pro_002.csv',
+#     'filtered_Go_stats_deepseek_coder.csv',
+# ]
 
 
 
@@ -168,13 +163,6 @@ def compute_metric_scores(dfs):
     # Create a copy of the dataframe to work on
 
     df_scores = pd.concat(dfs, ignore_index=True)
-
-    df_scores = df_scores.drop(columns=[
-        'compilation_status_score',
-        'runtime_errors_score', 'execution_time_score', 'line_coverage_score', 'branch_coverage_score',
-        'execution_time_score', 'assertions_mccabe_ratio_score',
-        'assertions_density_score', 'warnings_count_score'
-    ])
 
     df_scores['llm_model'] = df_scores['stats_file_path'].apply(extract_llm_model)
 
@@ -238,18 +226,27 @@ def compute_metric_scores(dfs):
         'assertions_density_score', 'warnings_count_score', 'timeout_occurred',
     ]]
     return df_scores
-#
-# dfs = []
-# for path in input_files:
-#     df = pd.read_csv(path)
-#     df["stats_file_path"] = path
-#     dfs.append(df)
-#
 
-# df_scores = compute_metric_scores(dfs)
-# print(df_scores)
-# df_scores.to_csv("./data/generated/docs_stats/combined_stats.csv", index=False)
 
-# df = pd.read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv")
-# df = df.iloc[:, : 14]
-# df.to_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv", index=False)
+
+def create_combined_score_stats():
+    # Collect all CSV files from the given directory
+    directory = Config.get_stats_input_dir()
+    print(directory)
+    all_files = glob.glob(os.path.join(directory, "*.csv"))
+
+    dfs = []
+    for path in all_files:
+        if "_stats_" in os.path.basename(path):
+            df = pd.read_csv(path)
+            df["stats_file_path"] = path
+            print(path)
+            dfs.append(df)
+
+    # Compute metric scores from the collected DataFrames
+    df_scores = compute_metric_scores(dfs)
+
+    # Save the combined stats to a CSV file in the same directory
+    df_scores.to_csv(os.path.join(Config.get_stats_output_dir(), "combined_stats.csv"), index=False)
+
+create_combined_score_stats()

@@ -2,34 +2,23 @@ import os
 import tempfile
 
 import pandas as pd
-import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu, spearmanr
 
+from config import Config
 from python_assertion_ratios import compute_complexity
 
 
 def analyze_correlations():
-    gpt = pd.read_csv("data/generated/docs_stats/filtered_Python_stats_gpt_4o_2024_08_06.csv")
-    gemini = pd.read_csv("data/generated/docs_stats/filtered_Python_stats_gemini_1_5_pro_002.csv")
-    deepseek = pd.read_csv("data/generated/docs_stats/filtered_Python_stats_deepseek_coder.csv")
-    combined_stats = pd.read_csv("data/generated/docs_stats/combined_stats.csv")
+    gpt = pd.read_csv(os.path.join(Config.get_stats_input_dir(), "filtered_Python_stats_gpt_4o_2024_08_06.csv"))
+    gemini = pd.read_csv(os.path.join(Config.get_stats_input_dir(), "filtered_Python_stats_gemini_1_5_pro_002.csv"))
+    deepseek = pd.read_csv(os.path.join(Config.get_stats_input_dir(), "filtered_Python_stats_deepseek_coder.csv"))
+    combined_stats = pd.read_csv(os.path.join(Config.get_stats_input_dir(), "combined_stats.csv"))
 
     models_data = {"gpt_4o_2024_08_06": gpt, "gemini_1_5_pro_002": gemini, "deepseek_coder": deepseek}
     for model, model_data in models_data.items():
         print("Python, " + model + ":")
         model_data['passed_compilation_and_runtime'] = (model_data['compilation_status'] == 'CompileStatus.OK') & (
                 model_data['runtime_errors_count'] == 0)
-
-        # Plotting a basic histogram
-        plt.hist(model_data["code_length"], bins=30, color='skyblue', edgecolor='black')
-
-        # Adding labels and title
-        plt.xlabel('Values')
-        plt.ylabel('Frequency')
-        plt.title('Basic Histogram')
-
-        # Display the plot
-        # plt.show()
 
         executable_code_lengths = model_data[model_data['passed_compilation_and_runtime'] == True]["code_length"]
         nonexecutable_code_lengths = model_data[model_data['passed_compilation_and_runtime'] == False]["code_length"]
@@ -65,28 +54,25 @@ def analyze_correlations():
         result_df = filtered_df[columns_to_select]
 
         score_columns = [col for col in columns_to_select if col not in ["line_count", "code"]]
-        result_df["total_score"] = result_df[score_columns].sum(axis=1)
+        total_score = result_df[score_columns].sum(axis=1)
 
         # Compute Spearman correlation
-        corr, p_value = spearmanr(result_df["line_count"], result_df["total_score"])
+        corr, p_value = spearmanr(result_df["line_count"], total_score)
 
         print("Spearman correlation:", corr)
         print("P-value:", p_value)
-
 
         if p_value < 0.05:
             print("There is a statistically significant monotonic relationship.")
         else:
             print("No statistically significant monotonic relationship.")
 
-        print("\n")
-
-        result_df["complexity"] = result_df["code"].apply(get_complexity_from_code)
+        complexity = result_df["code"].apply(get_complexity_from_code)
 
         print()
         print()
         print("Python, " + model + ", relationship between complexity and total score:")
-        corr, p_value = spearmanr(result_df["complexity"], result_df["total_score"])
+        corr, p_value = spearmanr(complexity, total_score)
         print("Spearman correlation:", corr)
         print("P-value:", p_value)
         if p_value < 0.05:
@@ -95,9 +81,6 @@ def analyze_correlations():
             print("No statistically significant monotonic relationship.")
         print()
         print()
-
-
-
 
 
 def get_complexity_from_code(code_snippet: str) -> float:
@@ -115,5 +98,3 @@ def get_complexity_from_code(code_snippet: str) -> float:
         os.remove(temp_file_path)
 
     return complexity
-
-# analyze_correlations()

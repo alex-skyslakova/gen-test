@@ -239,8 +239,27 @@ def verify_required_env_vars(required_env_vars):
     print("All required API key environment variables are set.")
     return True
 
-#
-# df = pd.read_csv("data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv")
-# df = make_private_java_methods_public(df, "code")
-# print(df)
-# df.to_csv("data/generated/docs_stats/test_filtered_Java_stats_gpt_4o_2024_08_06.csv", index=False)
+
+def filter_csv_columns(input_files):
+    columns_to_keep = [
+        "task_name", "task_description", "language_name", "code", "code_length", "line_count",
+        "generated_code", "file_path", "compilation_status", "runtime_errors_count",
+        "line_coverage_percent", "branch_coverage_percent", "assertions_density",
+        "assertions_mccabe_ratio", "tests_pass_percentage", "execution_time_sec",
+        "warnings_count", "warnings", "timeout_occurred", "internal_error_occurred",
+        "syntax_failure_cause", "syntax_maven_output", "test_maven_output"
+    ]
+
+    filtered_data = {}
+
+    for file in input_files:
+        print(f"Processing file: {file}")
+        try:
+            df = pd.read_csv(file)
+            existing_columns = [col for col in columns_to_keep if col in df.columns]
+            filtered_data[file] = df[existing_columns]
+        except Exception as e:
+            print(f"Error processing file {file}: {e}")
+
+    return filtered_data
+

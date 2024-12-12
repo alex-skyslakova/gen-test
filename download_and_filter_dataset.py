@@ -6,12 +6,14 @@ import pandas as pd
 from datasets import load_dataset
 from pandas import read_csv
 
+from config import Config
+from plot_results import present_results_as_plots
 from go_analysis import analyze_go_tests
 from go_validation import validate_go_code_with_build
 from java_validation import validate_java_code
 from kotlin_analysis import analyze_kotlin_tests, run_ktlint
 from kotlin_validation import validate_kotlin_code
-from present_results import compute_metric_scores
+from combined_stats import compute_metric_scores, create_combined_score_stats
 from python_assertion_ratios import assertions_density_python, assertions_mccabe_ratio_python
 from python_coverage_computation import get_coverage
 from deepseek import generate_test_deepseek_coder
@@ -27,17 +29,17 @@ from python_validation import CompileStatus, check_syntax_string, check_syntax_f
 
 LANGUAGES_TO_KEEP = {"Python", "Java", "Kotlin", "Go"}
 
-GENERATED_DIR = "./data/generated/docs_python/"
-STATS_DIR = "./data/generated/docs_stats/"
+# GENERATED_DIR = "./data/generated/docs_python/"
+# STATS_DIR = "./data/generated/docs_stats/"
 
 
 def download_and_validate_dataset(use_existing_generated_data=True):
     if use_existing_generated_data:
         language_data_dict = {
-            "Python": read_csv("./data/raw/raw_python_dataset.csv"),
-            "Kotlin": read_csv("./data/raw/raw_kotlin_dataset.csv"),
-            "Java": read_csv("./data/raw/raw_java_dataset.csv"),
-            "Go": read_csv("./data/raw/raw_go_dataset.csv")
+            "Python": read_csv(os.path.join(Config.get_raw_dir(), "raw_python_dataset.csv")),
+            "Kotlin": read_csv(os.path.join(Config.get_raw_dir(), "raw_kotlin_dataset.csv")),
+            "Java": read_csv(os.path.join(Config.get_raw_dir(), "raw_java_dataset.csv")),
+            "Go": read_csv(os.path.join(Config.get_raw_dir(), "raw_go_dataset.csv"))
         }
 
     else:
@@ -62,7 +64,7 @@ def download_and_validate_dataset(use_existing_generated_data=True):
                 filtered_df["code_syntax"] = filtered_df["code"].apply(
                     lambda x: validate_go_code_with_build(x.replace('\u00A0', ' ')))
 
-            filtered_df.to_csv("./data/raw/raw_" + lang.lower() + "_dataset.csv") # TODO save to data folder
+            filtered_df.to_csv(os.path.join(Config.get_raw_dir(), ("raw_" + lang.lower() + "_dataset.csv")))
             language_data_dict[lang] = filtered_df
 
     lang_dict_correct_syntax = {}
@@ -86,7 +88,7 @@ def filter_dataset(dict_per_language, size=200):
     for l, df in syntactically_correct.items():
         filtered_dict[l] = df[df['task_name'].isin(common_tasks)]
         filtered_dict[l] = filtered_dict[l].sort_values(by=['task_name']).head(size)
-        filtered_dict[l].to_csv(os.path.join(STATS_DIR, "filtered_" + l + ".csv"), index=False, header=True)
+        filtered_dict[l].to_csv(os.path.join(Config.get_stats_output_dir(), "filtered_" + l + ".csv"), index=False, header=True)
     return filtered_dict
 
 
@@ -130,12 +132,9 @@ def generate_tests(model: Model, df: pd.DataFrame, lang: LanguageEnum):
 
     df["generated_code"] = generated_codes
     df["file_path"] = filenames
-    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
+    df.to_csv(os.path.join(Config.get_stats_output_dir(), "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
               header=True)
     return df
-    # df = read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/stats/test_filtered_Python_stats_gpt_3_5_turbo.csv")
-    # run_analysis(df, model_string)
-    # run_analysis_python(df, model_string)
 
 
 def run_analysis(lang, df, model_string):
@@ -190,7 +189,7 @@ def run_analysis_kotlin(df, model_string, lang):
                 continue
             dir = os.path.dirname(file_path)
             found_warnings = run_ktlint(file_path)
-            result = analyze_kotlin_tests(dir)
+            result = analyze_kotlin_tests(dir, file_path)
 
             compilation_statuses.append(result["syntax"])
             warnings.append(found_warnings)
@@ -239,12 +238,7 @@ def run_analysis_kotlin(df, model_string, lang):
     df["warnings"] = warnings
     df["warnings_count"] = warnings_count
 
-    # df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
-    #           header=True)
-    #
-    # df = compute_metric_scores(df)
-
-    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
+    df.to_csv(os.path.join(Config.get_stats_output_dir(), "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
               header=True)
 
 
@@ -340,11 +334,8 @@ def run_analysis_java(df, model_string, lang):
 
     n = "filtered_{}_stats_{}.csv".format(lang.name, model_string)
     print("FILE WITH STATS: ", n)
-    # df.to_csv(os.path.join(STATS_DIR, n), index=False,
-    #           header=True)
-    #
-    # df = compute_metric_scores(df)
-    df.to_csv(os.path.join(STATS_DIR, n), index=False,
+
+    df.to_csv(os.path.join(Config.get_stats_output_dir(), n), index=False,
               header=True)
 
 
@@ -435,12 +426,7 @@ def run_analysis_go(df, model_string, lang):
     df["timeout"] = timeout_occurred
     df["internal_error_occurred"] = internal_error_occurred
 
-    # df.to_csv(os.path.join(STATS_DIR, "test_filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
-    #           header=True)
-    #
-    # df = compute_metric_scores(df)
-
-    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
+    df.to_csv(os.path.join(Config.get_stats_output_dir(), "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
               header=True)
     return df
 
@@ -562,30 +548,28 @@ def run_analysis_python(df, model_string, lang):
     #
     # df = compute_metric_scores(df)
 
-    df.to_csv(os.path.join(STATS_DIR, "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
+    df.to_csv(os.path.join(Config.get_stats_output_dir(), "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
               header=True)
 
     return df
 
 
 if __name__ == '__main__':
-    required_env_vars = []
-    all_env_vars_set = verify_required_env_vars(required_env_vars)
-    if not all_env_vars_set:
-        exit(1)
+    # required_env_vars = []
+    # all_env_vars_set = verify_required_env_vars(required_env_vars)
+    # if not all_env_vars_set:
+    #     exit(1)
 
-    languages = [LanguageEnum.Kotlin]
+    languages = [LanguageEnum.Python, LanguageEnum.Kotlin, LanguageEnum.Java, LanguageEnum.Go]
     dataset = download_and_validate_dataset()
     filtered = filter_dataset(dataset)
-
-
 
     ALL = False
     ONLY_ANALYSIS = True
     if ONLY_ANALYSIS:
         for l in languages:
             for m in [Model.GPT_4o, Model.GEMINI_1_5_pro, Model.DEEPSEEK_CODER]:
-                generated_df = read_csv("data/generated/docs_stats/filtered_{}_stats_{}.csv".format(l.name, m.value))
+                generated_df = read_csv("data/generated/docs_stats/filtered_{}_stats_{}.csv".format(l.name, m.value)).head(10)
                 run_analysis(l, generated_df, m.value)
     elif ALL:
         for l in languages:
@@ -598,4 +582,7 @@ if __name__ == '__main__':
         # generated_df = generate_tests(model, filtered[language.name], language)
         generated_df = read_csv("data/generated/docs_stats/filtered_Python_stats_gpt_4o_2024_08_06.csv")
         run_analysis_python(generated_df, model.value, language)
+
+    create_combined_score_stats()
+    present_results_as_plots()
     #analyze_go_tests("data/generated/docs_golang/list_rooted_trees/list_rooted_trees.go", "data/generated/docs_golang/list_rooted_trees/deepseek_coder_list_rooted_trees_test.go")

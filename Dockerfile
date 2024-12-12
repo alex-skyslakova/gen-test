@@ -8,7 +8,7 @@ ENV PATH="$KOTLIN_HOME/bin:$PATH"
 
 # Install required system dependencies
 RUN apt-get update && apt-get install -y \
-    curl wget git unzip tar && \
+    curl wget git unzip tar maven && \
     apt-get clean
 
 # Install Go 1.23.3
@@ -31,8 +31,8 @@ RUN wget -O kotlin-compiler.zip https://github.com/JetBrains/kotlin/releases/dow
     unzip kotlin-compiler.zip -d /opt/kotlin && \
     rm kotlin-compiler.zip
 
-RUN wget -O /opt/ktlint https://github.com/pinterest/ktlint/releases/download/0.50.0/ktlint && \
-    chmod +x /opt/ktlint && \
+RUN wget -O /opt/ktlint.jar https://github.com/pinterest/ktlint/releases/download/0.50.0/ktlint && \
+    chmod +x /opt/ktlint.jar && \
     echo "export PATH=/opt:$PATH" >> ~/.bashrc
 
 # Copy the Python requirements
@@ -52,4 +52,4 @@ RUN cd /app/data/generated/docs_golang && \
     go mod tidy
 
 # Set the entrypoint for the container
-ENTRYPOINT ["python", "download_python_dataset.py"]
+ENTRYPOINT ["python", "download_and_filter_dataset.py"]
