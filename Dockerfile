@@ -15,9 +15,7 @@ RUN apt-get update && apt-get install -y \
 RUN wget https://downloads.apache.org/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz && \
     tar -C /usr/local -xzf apache-maven-3.9.6-bin.tar.gz && \
     rm apache-maven-3.9.6-bin.tar.gz && \
-    ln -s /usr/local/apache-maven-3.9.6 /usr/local/maven && \
-    echo "export MAVEN_HOME=/usr/local/maven" >> ~/.bashrc && \
-    echo "export PATH=$MAVEN_HOME/bin:$PATH" >> ~/.bashrc
+    ln -s /usr/local/apache-maven-3.9.6 /usr/local/maven
 
 # Set environment variables for Maven
 ENV MAVEN_HOME=/usr/local/maven
@@ -29,20 +27,24 @@ RUN wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz && \
     rm go1.23.3.linux-amd64.tar.gz
 
 # Install Amazon Corretto JDK 21.0.1.12.1
-RUN wget -O amazon-corretto-21.tar.gz \
-    https://corretto.aws/downloads/resources/21.0.1.12.1/amazon-corretto-21.0.1.12.1-linux-x64.tar.gz && \
-    tar -C /usr/local -xzf amazon-corretto-21.tar.gz && \
-    rm amazon-corretto-21.tar.gz && \
-    ln -s /usr/local/amazon-corretto-21.0.1.12.1 /usr/local/java && \
-    echo "export JAVA_HOME=/usr/local/java" >> ~/.bashrc && \
-    echo "export PATH=$JAVA_HOME/bin:$PATH" >> ~/.bashrc
+# Install Amazon Corretto 21
+RUN apt-get update && apt-get install -y wget gnupg && \
+    wget -O - https://apt.corretto.aws/corretto.key | gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" > /etc/apt/sources.list.d/corretto.list && \
+    apt-get update && apt-get install -y java-21-amazon-corretto-jdk && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
+
+# Set environment variables for Java
+ENV JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
+ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # Install Kotlin 2.0.20
 RUN wget -O kotlin-compiler.zip https://github.com/JetBrains/kotlin/releases/download/v2.0.20/kotlin-compiler-2.0.20.zip && \
     unzip kotlin-compiler.zip -d /opt/kotlin && \
     rm kotlin-compiler.zip
 
+# Install ktlint 0.50.0
 RUN wget -O /opt/ktlint.jar https://github.com/pinterest/ktlint/releases/download/0.50.0/ktlint && \
     chmod +x /opt/ktlint.jar && \
     echo "export PATH=/opt:$PATH" >> ~/.bashrc
