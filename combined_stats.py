@@ -248,5 +248,3 @@ def create_combined_score_stats():
 
     # Save the combined stats to a CSV file in the same directory
     df_scores.to_csv(os.path.join(Config.get_stats_output_dir(), "combined_stats.csv"), index=False)
-
-create_combined_score_stats()

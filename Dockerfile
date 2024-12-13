@@ -66,4 +66,4 @@ RUN cd /app/data/generated/docs_golang && \
     go mod tidy
 
 # Set the entrypoint for the container
-ENTRYPOINT ["python", "download_and_filter_dataset.py"]
+ENTRYPOINT ["python", "main.py"]

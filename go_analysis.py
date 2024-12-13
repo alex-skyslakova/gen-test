@@ -394,9 +394,10 @@ def determine_syntax_result(build, vet):
 
 
 if __name__ == "__main__":
+    pass
     # Paths to your Go file and the specific test file
     # go_file = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/abbreviations_automatic/abbreviations_automatic.go"
     # test_file = "data/generated/golang/abbreviations_automatic/gemini_1_5_flash_002_abbreviations_automatic_test.go"
 
     #build_project("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/tmp1v_oax0s")
-    check_for_warnings("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_golang/list_rooted_trees")
+    #check_for_warnings("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_golang/list_rooted_trees")

@@ -139,8 +139,8 @@ def createOrExists(directory):
     # Add similar static methods for other attributes as needed
 
 
-print(Config.get_java_input_dir())
-print(Config.get_stats_output_dir())
-print(Config.get_stats_input_dir())
-print(Config.get_action())
-print(Config.get_conversations_dir())
+# print(Config.get_java_input_dir())
+# print(Config.get_stats_output_dir())
+# print(Config.get_stats_input_dir())
+# print(Config.get_action())
+# print(Config.get_conversations_dir())
