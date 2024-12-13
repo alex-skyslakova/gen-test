@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from helpers import extract_llm_model
+from src.helpers import extract_llm_model
 import matplotlib.pyplot as plt
 import seaborn as sns
 

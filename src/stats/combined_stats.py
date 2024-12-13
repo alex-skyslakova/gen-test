@@ -1,8 +1,8 @@
 import glob
 import re
 
-from config import Config
-from python_validation import CompileStatus
+from src.config import Config
+from src.analysis.python_validation import CompileStatus
 
 
 import pandas as pd

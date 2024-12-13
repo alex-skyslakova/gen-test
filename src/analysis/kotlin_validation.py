@@ -1,6 +1,6 @@
 import subprocess
 
-from python_validation import CompileStatus
+from src.analysis.python_validation import CompileStatus
 
 
 def validate_kotlin_code(kotlin_code, kotlin_file='temp.kt'):

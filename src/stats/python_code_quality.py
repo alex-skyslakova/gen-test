@@ -1,6 +1,4 @@
 import json
-import os
-import re
 import subprocess
 
 import numpy as np
@@ -8,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from helpers import extract_llm_model
+from src.helpers import extract_llm_model
 
 
 def run_pylint_and_collect_errors(filepath: str):

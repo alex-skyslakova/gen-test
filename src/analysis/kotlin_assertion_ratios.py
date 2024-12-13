@@ -3,7 +3,7 @@ from pygments import lex
 from pygments.lexers.jvm import KotlinLexer
 from pygments.token import Token
 
-from loc_analysis import get_sloc
+from src.analysis.loc_analysis import get_sloc
 
 kotlin_assertion_methods = [
     # JUnit assertions

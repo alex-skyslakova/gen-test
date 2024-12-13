@@ -1,6 +1,6 @@
 import javalang
 import lizard
-from loc_analysis import get_sloc
+from src.analysis.loc_analysis import get_sloc
 
 
 def is_assertion_method(method_name):

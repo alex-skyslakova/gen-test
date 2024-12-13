@@ -6,8 +6,8 @@ import subprocess
 import re
 from collections import Counter
 
-from go_assertion_ratios import assertions_density_go, assertions_mccabe_ratio_go
-from python_validation import CompileStatus
+from src.analysis.go_assertion_ratios import assertions_density_go, assertions_mccabe_ratio_go
+from src.analysis.python_validation import CompileStatus
 
 
 def run_command(command, cwd=None):

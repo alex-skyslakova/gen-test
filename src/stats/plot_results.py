@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 
-from config import Config
+from src.config import Config
 
 # Input files
 input_files = [

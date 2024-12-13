@@ -1,12 +1,13 @@
 import concurrent.futures
+import json
 import re
 
 import pandas as pd
 
-from language import LanguageEnum
+from src.language import LanguageEnum
 
-GENERATED_DIR = "./data/generated/docs_python/"
-STATS_DIR = "./data/generated/docs_stats/"
+GENERATED_DIR = "../data/generated/docs_python/"
+STATS_DIR = "../data/generated/docs_stats/"
 
 
 def run_with_timeout(func, timeout):
@@ -263,3 +264,36 @@ def filter_csv_columns(input_files):
 
     return filtered_data
 
+
+def find_output(json_file, input_argument):
+    try:
+        with open(json_file, 'r') as file:
+            data = json.load(file)
+
+            for item in data:
+                input_content = item.get("input", [])
+
+                if input_content == input_argument:
+                    return item.get("output", "Output not found")
+
+        return "No matching input found"
+    except FileNotFoundError:
+        return "JSON file not found"
+    except json.JSONDecodeError:
+        return "Error decoding JSON file"
+
+
+def extract_code_blocks(text: str, language: str):
+    # Regex pattern to find code blocks enclosed in triple backticks with a language specifier
+    pattern = re.compile(rf"```{language}\s*(.*?)```", re.DOTALL)
+
+    # Find all matches in the input text
+    matches = pattern.findall(text)
+
+    if not matches:
+        if "None" in text:
+            return "none"
+        else:
+            return "error"
+    # Concatenate all code blocks
+    return "\n".join(matches)

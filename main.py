@@ -1,10 +1,10 @@
-from combined_stats import create_combined_score_stats
-from download_and_filter_dataset import download_and_validate_dataset, filter_dataset, run_analysis, generate_tests
-from language import LanguageEnum
-from models import Model
+from src.stats.combined_stats import create_combined_score_stats
+from src.download_and_filter_dataset import download_and_validate_dataset, filter_dataset, run_analysis, generate_tests
+from src.language import LanguageEnum
+from src.models.models import Model
 from pandas import read_csv
 
-from plot_results import present_results_as_plots
+from src.stats.plot_results import present_results_as_plots
 
 
 def main():

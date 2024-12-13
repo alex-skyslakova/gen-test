@@ -3,7 +3,7 @@ from pygments import lex
 from pygments.lexers.go import GoLexer
 from pygments.token import Token
 
-from loc_analysis import get_sloc
+from src.analysis.loc_analysis import get_sloc
 
 
 # List of common assertion methods in Go

@@ -1,6 +1,6 @@
 import ast
 import lizard
-from loc_analysis import get_sloc
+from src.analysis.loc_analysis import get_sloc
 
 
 class AssertCounter(ast.NodeVisitor):

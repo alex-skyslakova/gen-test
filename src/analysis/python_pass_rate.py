@@ -6,12 +6,12 @@ import time
 import json
 import tempfile
 
-from python_coverage_computation import get_coverage
+from src.analysis.python_coverage_computation import get_coverage
 
 
 def run_tests(test_file, timeout=30):
     original_dir = os.getcwd()
-    temp_dir = tempfile.mkdtemp(dir=os.path.abspath(os.path.join(original_dir, "..")))
+    temp_dir = tempfile.mkdtemp(dir=os.path.abspath(os.path.join(original_dir, "../../..")))
     temp_file_path = os.path.join(temp_dir, os.path.basename(test_file))
 
     try:
@@ -75,7 +75,7 @@ def run_tests(test_file, timeout=30):
 
         print("RUNTIME ERRORS> ", runtime_errors)
         # Parse the pytest json report if available
-        json_report_path = '.report.json'  # This is the default pytest json-report output file
+        json_report_path = '../../.report.json'  # This is the default pytest json-report output file
         if os.path.exists(json_report_path):
             with open(json_report_path, 'r') as json_file:
                 test_report = json.load(json_file)

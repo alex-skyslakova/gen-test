@@ -6,26 +6,23 @@ import pandas as pd
 from datasets import load_dataset
 from pandas import read_csv
 
-from config import Config
-from plot_results import present_results_as_plots
-from go_analysis import analyze_go_tests
-from go_validation import validate_go_code_with_build
-from java_validation import validate_java_code
-from kotlin_analysis import analyze_kotlin_tests, run_ktlint
-from kotlin_validation import validate_kotlin_code
-from combined_stats import compute_metric_scores, create_combined_score_stats
-from python_assertion_ratios import assertions_density_python, assertions_mccabe_ratio_python
-from python_coverage_computation import get_coverage
-from deepseek import generate_test_deepseek_coder
-from gemini import generate_test_gemini_1_5_pro, generate_test_gemini_1_5_flash
-from gpt import generate_test_codex, generate_test_gpt35, generate_test_gpt4o_mini, generate_test_gpt4o
-from helpers import save_generated_test, save_content, read_generated_test, verify_required_env_vars
-from java_analysis import run_checkstyle, process_java_files_and_run_test_analysis
-from language import LanguageEnum
-from models import Model
-from python_pass_rate import run_tests
-from python_code_quality import pylint_check
-from python_validation import CompileStatus, check_syntax_string, check_syntax_file
+from src.config import Config
+from src.analysis.java_validation import validate_java_code
+from src.analysis.kotlin_analysis import analyze_kotlin_tests, run_ktlint
+from src.analysis.kotlin_validation import validate_kotlin_code
+from src.analysis.python_assertion_ratios import assertions_density_python, assertions_mccabe_ratio_python
+from src.models.deepseek import generate_test_deepseek_coder
+from src.models.gemini import generate_test_gemini_1_5_pro, generate_test_gemini_1_5_flash
+from src.models.gpt import generate_test_gpt35, generate_test_gpt4o_mini, generate_test_gpt4o
+from src.helpers import save_generated_test, save_content
+from src.analysis.java_analysis import run_checkstyle, process_java_files_and_run_test_analysis
+from src.language import LanguageEnum
+from src.models.models import Model
+from src.analysis.python_pass_rate import run_tests
+from src.stats.python_code_quality import pylint_check
+from src.analysis.python_validation import CompileStatus, check_syntax_string, check_syntax_file
+from src.analysis.go_analysis import analyze_go_tests
+from src.analysis.go_validation import validate_go_code_with_build
 
 LANGUAGES_TO_KEEP = {"Python", "Java", "Kotlin", "Go"}
 

@@ -2,11 +2,10 @@ import os
 import shutil
 import time
 import xml.etree.ElementTree as ET
-import json
 import glob
 
-from java_assertion_ratios import assertions_density_java, assertions_mccabe_ratio_java
-from python_validation import CompileStatus
+from src.analysis.java_assertion_ratios import assertions_density_java, assertions_mccabe_ratio_java
+from src.analysis.python_validation import CompileStatus
 
 JAVA_SRC_DIR = 'data/javaSetup/src/main/java/org/example/package'
 JAVA_TEST_DIR = 'data/javaSetup/src/test/java/org/example/package'

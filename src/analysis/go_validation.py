@@ -3,9 +3,7 @@ import shutil
 import subprocess
 import tempfile
 
-import pandas
-
-from python_validation import CompileStatus
+from src.analysis.python_validation import CompileStatus
 
 #
 # def validate_go_code_with_build(go_code, go_file='temp.go'):

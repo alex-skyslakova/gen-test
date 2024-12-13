@@ -2,10 +2,10 @@ import os
 import shutil
 import subprocess
 
-from java_analysis import run_maven_test_compile, run_maven_clean_test, compute_coverage_percentage, \
+from src.analysis.java_analysis import run_maven_test_compile, run_maven_clean_test, compute_coverage_percentage, \
     parse_report_and_compute_pass_rate
-from kotlin_assertion_ratios import assertions_density_kotlin, assertions_mccabe_ratio_kotlin
-from python_validation import CompileStatus
+from src.analysis.kotlin_assertion_ratios import assertions_density_kotlin, assertions_mccabe_ratio_kotlin
+from src.analysis.python_validation import CompileStatus
 
 KOTLIN_SRC_DIR = 'data/kotlinSetup/src/main/kotlin/org/example/package'
 KOTLIN_TEST_DIR = 'data/kotlinSetup/src/test/kotlin/org/example/package'

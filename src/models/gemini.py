@@ -2,12 +2,11 @@ import os
 
 import google.generativeai as genai
 
-from gpt import extract_code_blocks
-from helpers import simplify, convert_to_filename
+from src.helpers import simplify, convert_to_filename, extract_code_blocks
 
 from dotenv import load_dotenv
 from openai import OpenAI
-from log_conversations import log_conversation
+from src.log_conversations import log_conversation
 
 load_dotenv()
 

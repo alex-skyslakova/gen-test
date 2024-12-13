@@ -1,15 +1,12 @@
-import javalang
-
-from helpers import convert_to_java_filename
-from python_validation import CompileStatus
+from src.helpers import convert_to_java_filename
+from src.analysis.python_validation import CompileStatus
 import subprocess
-import tempfile
 import os
 
 def validate_java_code(java_code):
     try:
         name = convert_to_java_filename("Temp.java", "", data=java_code)
-        temp_file_path = os.path.join("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/javaSetup/src/main/java/org/example/package", name)
+        temp_file_path = os.path.join("/data/javaSetup/src/main/java/org/example/package", name)
         with open(temp_file_path, "w") as temp_file:
             temp_file.write(java_code)
 

@@ -1,6 +1,6 @@
 from enum import Enum
 
-from helpers import is_not_blank
+from src.helpers import is_not_blank
 
 
 class CompileStatus(Enum):

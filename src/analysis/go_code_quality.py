@@ -1,13 +1,12 @@
 import subprocess
 import json
-import sys
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from helpers import extract_llm_model
+from src.helpers import extract_llm_model
 
 
 def run_golangci(file_path):

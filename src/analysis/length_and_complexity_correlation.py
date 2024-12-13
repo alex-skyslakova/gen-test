@@ -4,8 +4,8 @@ import tempfile
 import pandas as pd
 from scipy.stats import mannwhitneyu, spearmanr
 
-from config import Config
-from python_assertion_ratios import compute_complexity
+from src.config import Config
+from src.analysis.python_assertion_ratios import compute_complexity
 
 
 def analyze_correlations():

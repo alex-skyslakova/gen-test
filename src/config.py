@@ -44,7 +44,7 @@ class Config:
     _kotlin_src_dir = "data/kotlinSetup/src/main/kotlin/org/example/package"
     _kotlin_test_dir = "data/kotlinSetup/src/test/kotlin/org/example/package"
     _kotlin_project_root = "data/kotlinSetup"
-    _ktlint_path = "./ktlint.jar"
+    _ktlint_path = "ktlint.jar"
     _kotlin_checkstyle_config = "./checkstyle-config.xml"
     _kotlin_test_reports = "data/kotlinSetup/target/surefire-reports/*.xml"
 
@@ -138,7 +138,7 @@ def createOrExists(directory):
     return directory
     # Add similar static methods for other attributes as needed
 
-
+#
 # print(Config.get_java_input_dir())
 # print(Config.get_stats_output_dir())
 # print(Config.get_stats_input_dir())

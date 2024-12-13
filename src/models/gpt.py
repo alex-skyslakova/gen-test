@@ -1,7 +1,5 @@
 import os
-import re
 
-import pandas as pd
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -10,10 +8,10 @@ env_key = os.getenv("OPENAI_API_KEY")
 print(env_key)
 client = OpenAI(api_key=env_key)
 
-from helpers import simplify, convert_to_filename
-from language import LanguageEnum
+from src.helpers import simplify, convert_to_filename, extract_code_blocks
+from src.language import LanguageEnum
 
-from log_conversations import log_conversation
+from src.log_conversations import log_conversation
 
 
 def generate_test_gpt35(name, code, suffix, docs):
@@ -107,83 +105,46 @@ def generate_test_codex(name: str, code: str, lang: LanguageEnum = None, tempera
     return completion.choices[0].text
 
 
-import json
-
-
-def find_output(json_file, input_argument):
-    try:
-        with open(json_file, 'r') as file:
-            data = json.load(file)
-
-            for item in data:
-                input_content = item.get("input", [])
-
-                if input_content == input_argument:
-                    return item.get("output", "Output not found")
-
-        return "No matching input found"
-    except FileNotFoundError:
-        return "JSON file not found"
-    except json.JSONDecodeError:
-        return "Error decoding JSON file"
-
-
-def extract_code_blocks(text: str, language: str):
-    # Regex pattern to find code blocks enclosed in triple backticks with a language specifier
-    pattern = re.compile(rf"```{language}\s*(.*?)```", re.DOTALL)
-
-    # Find all matches in the input text
-    matches = pattern.findall(text)
-
-    if not matches:
-        if "None" in text:
-            return "none"
-        else:
-            return "error"
-    # Concatenate all code blocks
-    return "\n".join(matches)
-
-
-def compare_csv_rows(file1: str, file2: str, column: str):
-    """
-    Compare a specific column row-by-row in two CSV files and print mismatched values.
-
-    Parameters:
-        file1 (str): Path to the first CSV file.
-        file2 (str): Path to the second CSV file.
-        column (str): Name of the column to compare.
-    """
-    try:
-        # Load the CSV files
-        df1 = pd.read_csv(file1)
-        df2 = pd.read_csv(file2)
-
-        # Check if the column exists in both files
-        if column not in df1.columns or column not in df2.columns:
-            print(f"Column '{column}' not found in one of the files.")
-            return
-
-        # Ensure both files have the same number of rows
-        if len(df1) != len(df2):
-            print(f"Files have different number of rows: {len(df1)} vs {len(df2)}")
-            return
-
-        # Compare the column values row by row
-        mismatches = []
-        for i, (value1, value2) in enumerate(zip(df1[column], df2[column])):
-            if value1 != value2:
-                mismatches.append((i, value1, value2))
-
-        # Print mismatched rows
-        if mismatches:
-            print(f"Mismatched rows in column '{column}':")
-            for index, val1, val2 in mismatches:
-                print(f"Row {index + 1}: File1 = {val1}, File2 = {val2}")
-        else:
-            print(f"No mismatches found in column '{column}'.")
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
+# def compare_csv_rows(file1: str, file2: str, column: str):
+#     """
+#     Compare a specific column row-by-row in two CSV files and print mismatched values.
+#
+#     Parameters:
+#         file1 (str): Path to the first CSV file.
+#         file2 (str): Path to the second CSV file.
+#         column (str): Name of the column to compare.
+#     """
+#     try:
+#         # Load the CSV files
+#         df1 = pd.read_csv(file1)
+#         df2 = pd.read_csv(file2)
+#
+#         # Check if the column exists in both files
+#         if column not in df1.columns or column not in df2.columns:
+#             print(f"Column '{column}' not found in one of the files.")
+#             return
+#
+#         # Ensure both files have the same number of rows
+#         if len(df1) != len(df2):
+#             print(f"Files have different number of rows: {len(df1)} vs {len(df2)}")
+#             return
+#
+#         # Compare the column values row by row
+#         mismatches = []
+#         for i, (value1, value2) in enumerate(zip(df1[column], df2[column])):
+#             if value1 != value2:
+#                 mismatches.append((i, value1, value2))
+#
+#         # Print mismatched rows
+#         if mismatches:
+#             print(f"Mismatched rows in column '{column}':")
+#             for index, val1, val2 in mismatches:
+#                 print(f"Row {index + 1}: File1 = {val1}, File2 = {val2}")
+#         else:
+#             print(f"No mismatches found in column '{column}'.")
+#
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
 
 
 # Example usage

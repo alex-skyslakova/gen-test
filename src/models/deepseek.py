@@ -3,9 +3,8 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-from gpt import extract_code_blocks
-from helpers import simplify, convert_to_filename
-from log_conversations import log_conversation
+from src.helpers import simplify, convert_to_filename, extract_code_blocks
+from src.log_conversations import log_conversation
 
 load_dotenv()
 

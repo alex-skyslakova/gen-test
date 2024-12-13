@@ -2,8 +2,8 @@ import json
 import os
 from datetime import datetime
 
-from config import Config
-from helpers import simplify
+from src.config import Config
+from src.helpers import simplify
 
 
 def log_conversation(name, model, temperature, messages, output, lang, total_tokens=None, prompt_tokens=None,
