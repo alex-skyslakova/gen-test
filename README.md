@@ -15,7 +15,7 @@ GenTest provides three actions that can be performed:
 
 ### Present saved results
 - this is the default action
--  run this docker command to visualize the results:
+-  run this docker commands to visualize the results:
 ```bash
  # first, build the docker image
  docker build -t gen-test .
@@ -24,7 +24,7 @@ GenTest provides three actions that can be performed:
  # then, run the docker image 
  docker run -d --name my_container -it gen-test
  # copy the output folder from the container to the host
- docker cp my_container:/app/output my_output
+ docker cp my_container:/app/output ./my_output
  
 ```
 - you can find the plots in the `my_output` folder
@@ -41,7 +41,7 @@ GenTest provides three actions that can be performed:
  # then, run the docker image 
  docker run -d --name my_container -it gen-test
  # copy the output folder from the container to the host
- docker cp my_container:/app/output my_output
+ docker cp my_container:/app/output ./my_output
  
 ```
 - note: analysis may take a while (up to multiple hours), depending on the number of tests
@@ -62,7 +62,7 @@ GenTest provides three actions that can be performed:
  # then, run the docker image 
  docker run -d --name my_container -it gen-test
  # copy the output folder from the container to the host
- docker cp my_container:/app/output my_output
+ docker cp my_container:/app/output ./my_output
  
 ```
 
