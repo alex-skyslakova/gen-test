@@ -1,25 +1,18 @@
-import os
-
 import google.generativeai as genai
 
+from src.config import Config
 from src.helpers import simplify, convert_to_filename, extract_code_blocks
-
-from dotenv import load_dotenv
 from openai import OpenAI
 from src.log_conversations import log_conversation
 
-load_dotenv()
-
-
-GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
-client = OpenAI(api_key=GEMINI_API_KEY,
+client = OpenAI(api_key=Config.get_gemini_api_key(),
                 base_url="https://generativelanguage.googleapis.com/v1beta/")
 
 
 def generate_test_gemini_1_5_pro(name, code, lang, docs=""):
 
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
+        genai.configure(api_key=Config.get_gemini_api_key())
         filename = convert_to_filename(name, 'gemini-1.5-pro-002', lang, data=code)
 
         model = genai.GenerativeModel('gemini-1.5-pro-002')
@@ -48,7 +41,7 @@ def generate_test_gemini_1_5_pro(name, code, lang, docs=""):
 def generate_test_gemini_1_5_flash(name, code, lang, docs=""):
     try:
         filename = convert_to_filename(name, 'gemini-1.5-flash-002', lang, data=code)
-        genai.configure(api_key=GEMINI_API_KEY)
+        genai.configure(api_key=Config.get_gemini_api_key())
 
         model = genai.GenerativeModel('gemini-1.5-flash-002')
         print("generating for " + filename)

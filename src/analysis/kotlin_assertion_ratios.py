@@ -32,8 +32,6 @@ def count_assertions_in_kotlin_file(file_path):
         while i < len(tokens_list):
             token_type, token_value = tokens_list[i]
             if token_type == Token.Name and token_value in kotlin_assertion_methods:
-                # Check if it's a function call
-                # Skip whitespace and comments
                 j = i + 1
                 while j < len(tokens_list) and tokens_list[j][0] in (
                 Token.Text, Token.Comment.Single, Token.Comment.Multiline):
@@ -52,8 +50,8 @@ def assertions_mccabe_ratio_kotlin(code_file_path, test_file_path):
     assertions_count = count_assertions_in_kotlin_file(test_file_path)
     result = lizard.analyze_file(code_file_path)
     complexity = sum([f.cyclomatic_complexity for f in result.function_list])
-    print("assertions: ", assertions_count)
-    print("complexity: ", complexity)
+    print("Assertions: ", assertions_count)
+    print("Complexity: ", complexity)
     return round(assertions_count / complexity) if complexity != 0 else None
 
 

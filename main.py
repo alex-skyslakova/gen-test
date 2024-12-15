@@ -20,8 +20,16 @@ def main():
     filtered = filter_dataset(dataset, Config._data_size)
 
     if action == Action.GENERATE_AND_ANALYZE:
+        deepseek_api_key = Config.get_deepseek_api_key()
+        openai_api_key = Config.get_openai_api_key()
+        gemini_api_key = Config.get_gemini_api_key()
+        for key in [deepseek_api_key, openai_api_key, gemini_api_key]:
+            if key is None or key == "":
+                print("API key is missing, please set it in the .env file")
+                return
+
         for l in languages:
-            for m in Model:
+            for m in [Model.GPT_4o, Model.GEMINI_1_5_pro, Model.DEEPSEEK_CODER]:
                 generated_df = generate_tests(m, filtered[l.name], l)
                 run_analysis(l, generated_df, m.value)
     elif action == Action.RUN_ANALYSIS_ON_SAVED:

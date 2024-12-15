@@ -35,8 +35,8 @@ def assertions_mccabe_ratio_python(codepath, testpath):
     complexity = compute_complexity(codepath)
 
     assertions_count = count_assertions_in_python_file(testpath)
-    print("assertions: ", assertions_count)
-    print("complexity: ", complexity)
+    print("Assertions: ", assertions_count)
+    print("Complexity: ", complexity)
     return round(assertions_count / complexity, 2) if complexity != 0 else None
 
 

@@ -8,6 +8,19 @@ Therefore, you need to have [Docker](https://docs.docker.com/get-started/introdu
 Based on the actions you plan to perform, you may need to set up accounts and billing for each of the three used models. 
 
 ## Setup
+
+- Clone the repository from GitHub:
+```bash
+git clone https://github.com/alex-skyslakova/gen-test.git
+```
+
+or download and unzip the source code from IS MUNI thesis vault. 
+
+- Navigate to the project directory:
+```bash
+cd gen-test
+```
+
 GenTest provides three actions that can be performed:
 - **Present saved results** (default): If you only want to see the results of the analysis on pre-generated tests, you can just visualize plots from saved data.
 - **Run analysis on saved generated tests** To avoid generating new tests, either due to time or avoiding costs, you can run the analysis on pre-generated tests. The tests will be executed, all values will be computed and saved in the `output` folder. 
@@ -31,7 +44,7 @@ GenTest provides three actions that can be performed:
 
 ### Run analysis on saved generated tests
 - open .env file and set `ACTION=2`
-- you can also update the amount of data to be analyzed by setting `DATA_SIZE` variable in the .env file. The default value is full size of the saved dataset 200. However, the analysis takes few hours for full dataset. For testing purposes, set `DATA_SIZE=10` to analyze only 10 tests.
+- you can also update the amount of data to be analyzed by setting `DATA_SIZE` variable in the .env file. The default value is full size of the saved dataset - 200. However, the analysis takes few hours for full dataset. For testing purposes, set `DATA_SIZE=10` to analyze only 10 tests.
 - run the following commands:
 ```bash
  # first, build the docker image
@@ -52,7 +65,8 @@ GenTest provides three actions that can be performed:
 - [Set up the DeepSeek account](https://platform.deepseek.com/api_keys) and generate API KEY
 - To be able to generate new tests, you also need to enable pay-as-you-go or pre-pay credits on the platforms. 
 - open .env file and set `ACTION=3`
-- you can also update the amount of data to be analyzed by setting `DATA_SIZE` variable in the .env file.
+- fill in the API keys in the .env file
+- you can also update the amount of data to be analyzed by setting `DATA_SIZE` variable in the .env file. Same as for running analysis, for trying out the tool, set `DATA_SIZE=5` to generate only 5 tests .
 - run the following commands:
 ```bash
  # first, build the docker image
@@ -63,7 +77,6 @@ GenTest provides three actions that can be performed:
  docker run -d --name my_container -it gen-test
  # wait for container execution to finish and copy the output folder from the container to the host
  docker cp my_container:/app/output ./my_output
- 
 ```
 
 

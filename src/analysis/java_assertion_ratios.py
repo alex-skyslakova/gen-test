@@ -48,10 +48,6 @@ def assertions_mccabe_ratio_java(code_file_path, test_file_path):
     assertions_count = count_assertions_in_file(test_file_path)
     result = lizard.analyze_file(code_file_path)
     complexity = sum([f.cyclomatic_complexity for f in result.function_list])
-    print("assertions: ", assertions_count)
-    print("complexity: ", complexity)
+    print("Assertions: ", assertions_count)
+    print("Complexity: ", complexity)
     return round(assertions_count / complexity) if (complexity != 0 and complexity is not None) else None
-
-if __name__ == "__main__":
-    print(assertions_density_java("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/java/gemini_1_5_flash_002/AbbreviationsSimple/AbbreviationsTest.java"))
-    print(assertions_mccabe_ratio_java("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/abbreviations_simple/abbreviations_simple.go", "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/java/gemini_1_5_flash_002/AbbreviationsSimple/AbbreviationsTest.java"))

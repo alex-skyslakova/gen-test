@@ -1,20 +1,20 @@
-import os
-
 from openai import OpenAI
 from dotenv import load_dotenv
 
+from src.config import Config
 from src.helpers import simplify, convert_to_filename, extract_code_blocks
 from src.log_conversations import log_conversation
 
 load_dotenv()
 
 
-client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com/beta")
+client = OpenAI(api_key=Config.get_deepseek_api_key(), base_url="https://api.deepseek.com/beta")
 
 
 def generate_test_deepseek_coder(name, code, lang, docs=""):
     filename = convert_to_filename(name, 'deepseek-coder', lang, data=code)
     model = "deepseek-coder"
+    print("generating for " + simplify(name))
     docs = (" Documentation: " + docs) if docs is not None and docs != "" else ""
     messages = [
         {"role": "system",

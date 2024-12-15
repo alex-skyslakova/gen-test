@@ -45,9 +45,6 @@ def check_for_warnings(project_dir, tests=True):
 
         print("Running go vet...")
         # Run the go vet command and capture output
-        print("cwd:", os.getcwd())
-        print("content:", os.listdir())
-        print("passed to command: ", project_dir)
         process = subprocess.Popen(
             vet_cmd,
             shell=True,
@@ -55,7 +52,6 @@ def check_for_warnings(project_dir, tests=True):
             stderr=subprocess.PIPE,
             text=True  # Ensures the output is in string format
         )
-        print("done with go vet")
         stdout, stderr = process.communicate()
 
         output = stderr.strip()
@@ -198,7 +194,7 @@ def run_tests(project_dir):
             "test_pass_rate": pass_percentage,
             "execution_time_sec": summary_time if summary_time is not None else total_time,
             "line_coverage_percent": coverage,
-            "branch_coverage_percent": None, # TODO
+            "branch_coverage_percent": None,
             "timeout": False,
             "internal_error_occurred": False,
             "runtime_errors_count": runtime_errors

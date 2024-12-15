@@ -255,59 +255,60 @@ def run_analysis_java(df, model_string, lang):
 
     for index, row in df.copy(deep=True).iterrows():
         count += 1
-        # try:
-        file_path = row['file_path']
-        print("FIle path from csv: ", file_path)
-        if isinstance(file_path, float) or file_path is None:
-            warnings_count.append(None)
-            warnings.append(None)
-            line_coverage_percentages.append(None)
-            branch_coverage_percentages.append(None)
-            pass_percentages.append(None)
-            compilation_statuses.append(None)
-            execution_time_sec.append(None)
-            timeout_occurred.append(False)
-            internal_error_occurred.append(False)
-            assertions_density.append(None)
-            assertions_mccabe_ratio.append(None)
-            runtime_errors.append(None)
-            syntax_maven_output.append(None)
-            test_maven_output.append(None)
-            continue
-        dir = os.path.dirname(file_path)
-        found_warnings = run_checkstyle(file_path)
-        result = process_java_files_and_run_test_analysis(dir, file_path)
+        try:
+            file_path = row['file_path']
+            print("FIle path from csv: ", file_path)
+            if isinstance(file_path, float) or file_path is None:
+                warnings_count.append(None)
+                warnings.append(None)
+                line_coverage_percentages.append(None)
+                branch_coverage_percentages.append(None)
+                pass_percentages.append(None)
+                compilation_statuses.append(None)
+                execution_time_sec.append(None)
+                timeout_occurred.append(False)
+                internal_error_occurred.append(False)
+                assertions_density.append(None)
+                assertions_mccabe_ratio.append(None)
+                runtime_errors.append(None)
+                syntax_maven_output.append(None)
+                test_maven_output.append(None)
+                continue
+            dir = os.path.dirname(file_path)
+            found_warnings = run_checkstyle(file_path)
+            result = process_java_files_and_run_test_analysis(dir, file_path)
 
-        compilation_statuses.append(result["syntax"])
-        warnings.append(found_warnings)
-        warnings_count.append(len(found_warnings) if found_warnings != None else None)
-        pass_percentages.append(result["test_pass_rate"])
-        execution_time_sec.append(result["execution_time_sec"])
-        timeout_occurred.append(result["timeout_occurred"])
-        line_coverage_percentages.append(result["line_coverage_percent"])
-        branch_coverage_percentages.append(result["branch_coverage_percent"])
-        internal_error_occurred.append(result["internal_error_occurred"])
-        assertions_density.append(result["assertion_density"])
-        assertions_mccabe_ratio.append(result["assertions_mccabe_ratio"])
-        runtime_errors.append(result["runtime_errors"])
-        syntax_maven_output.append(result["syntax_maven_output"])
-        test_maven_output.append(result["test_maven_output"])
+            compilation_statuses.append(result["syntax"])
+            warnings.append(found_warnings)
+            warnings_count.append(len(found_warnings) if found_warnings != None else None)
+            pass_percentages.append(result["test_pass_rate"])
+            execution_time_sec.append(result["execution_time_sec"])
+            timeout_occurred.append(result["timeout_occurred"])
+            line_coverage_percentages.append(result["line_coverage_percent"])
+            branch_coverage_percentages.append(result["branch_coverage_percent"])
+            internal_error_occurred.append(result["internal_error_occurred"])
+            assertions_density.append(result["assertion_density"])
+            assertions_mccabe_ratio.append(result["assertions_mccabe_ratio"])
+            runtime_errors.append(result["runtime_errors"])
+            syntax_maven_output.append(result["syntax_maven_output"])
+            test_maven_output.append(result["test_maven_output"])
 
-        # except Exception as e:
-        #     append_if_not_included(count, warnings_count, None)
-        #     append_if_not_included(count, warnings, None)
-        #     append_if_not_included(count, line_coverage_percentages, None)
-        #     append_if_not_included(count, branch_coverage_percentages, None)
-        #     append_if_not_included(count, pass_percentages, None)
-        #     append_if_not_included(count, compilation_statuses, None)
-        #     append_if_not_included(count, execution_time_sec, None)
-        #     append_if_not_included(count, timeout_occurred, False)
-        #     append_if_not_included(count, assertions_density, None)
-        #     append_if_not_included(count, assertions_mccabe_ratio, None)
-        #     append_if_not_included(count, internal_error_occurred, True)
-        #     append_if_not_included(count, runtime_errors, None)
-        #     append_if_not_included(count, syntax_maven_output, None)
-        #     append_if_not_included(count, test_maven_output, None)
+        except Exception as e:
+            print("Error occurred: ", e)
+            append_if_not_included(count, warnings_count, None)
+            append_if_not_included(count, warnings, None)
+            append_if_not_included(count, line_coverage_percentages, None)
+            append_if_not_included(count, branch_coverage_percentages, None)
+            append_if_not_included(count, pass_percentages, None)
+            append_if_not_included(count, compilation_statuses, None)
+            append_if_not_included(count, execution_time_sec, None)
+            append_if_not_included(count, timeout_occurred, False)
+            append_if_not_included(count, assertions_density, None)
+            append_if_not_included(count, assertions_mccabe_ratio, None)
+            append_if_not_included(count, internal_error_occurred, True)
+            append_if_not_included(count, runtime_errors, None)
+            append_if_not_included(count, syntax_maven_output, None)
+            append_if_not_included(count, test_maven_output, None)
 
     print("COMPILATION_STATUSES: ", compilation_statuses)
 
@@ -351,65 +352,65 @@ def run_analysis_go(df, model_string, lang):
 
     for index, row in df.copy(deep=True).iterrows():
         count += 1
-        # try:
-        filename = row['file_path']
+        try:
+            filename = row['file_path']
 
-        print("Filename: ", filename)
+            print("Filename: ", filename)
 
-        if isinstance(filename, float):
-            warnings_count.append(None)
-            warnings.append(None)
-            line_coverage_percentages.append(None)
-            branch_coverage_percentages.append(None)
-            pass_percentages.append(None)
-            compilation_statuses.append(None)
-            execution_time_sec.append(None)
-            timeout_occurred.append(False)
-            internal_error_occurred.append(False)
-            assertions_density.append(None)
-            assertions_mccabe_ratio.append(None)
-            runtime_errors_count.append(None)
-            syntax_output.append(None)
+            if isinstance(filename, float) or filename is None:
+                warnings_count.append(None)
+                warnings.append(None)
+                line_coverage_percentages.append(None)
+                branch_coverage_percentages.append(None)
+                pass_percentages.append(None)
+                compilation_statuses.append(None)
+                execution_time_sec.append(None)
+                timeout_occurred.append(False)
+                internal_error_occurred.append(False)
+                assertions_density.append(None)
+                assertions_mccabe_ratio.append(None)
+                runtime_errors_count.append(None)
+                syntax_output.append(None)
+                continue
+            go_file = os.path.join(os.path.dirname(filename),
+                                   Path(filename).name.replace("_test.go", ".go").replace(model_string + "_",
+                                                                                          "")) if filename is not None else None
+            test_file = filename
+            print("Test file: ", test_file)
+            print("Go file: ", go_file)
+
+            result = analyze_go_tests(go_file, test_file)
+
+            compilation_statuses.append(result["syntax"])
+            line_coverage_percentages.append(result["line_coverage_percent"])
+            branch_coverage_percentages.append(result["branch_coverage_percent"])
+            warnings.append(result["warnings"])
+            warnings_count.append(result["warnings_count"])
+            pass_percentages.append(result["test_pass_rate"])
+            execution_time_sec.append(result["execution_time_sec"])
+            timeout_occurred.append(result["timeout"])
+            internal_error_occurred.append(result["internal_error_occurred"])
+            assertions_density.append(result["assertions_density"])
+            assertions_mccabe_ratio.append(result["assertions_mccabe_ratio"])
+            runtime_errors_count.append(result["runtime_errors_count"])
+            syntax_output.append(result["syntax_output"])
+
+        except Exception as e:
+            print("Error occurred: ", e)
+            append_if_not_included(count, warnings_count, None)
+            append_if_not_included(count, warnings, None)
+            append_if_not_included(count, line_coverage_percentages, None)
+            append_if_not_included(count, pass_percentages, None)
+            append_if_not_included(count, compilation_statuses, None)
+            append_if_not_included(count, execution_time_sec, None)
+            append_if_not_included(count, timeout_occurred, False)
+            append_if_not_included(count, assertions_density, None)
+            append_if_not_included(count, assertions_mccabe_ratio, None)
+            append_if_not_included(count, internal_error_occurred, True)
+            append_if_not_included(count, branch_coverage_percentages, None)
+            append_if_not_included(count, runtime_errors_count, None)
+            append_if_not_included(count, syntax_output, None)
             continue
-        go_file = os.path.join(os.path.dirname(filename),
-                               Path(filename).name.replace("_test.go", ".go").replace(model_string + "_",
-                                                                                      "")) if filename is not None else None
-        test_file = filename
-        print("Test file: ", test_file)
-        print("Go file: ", go_file)
-
-        result = analyze_go_tests(go_file, test_file)
-
-        compilation_statuses.append(result["syntax"])
-        line_coverage_percentages.append(result["line_coverage_percent"])
-        branch_coverage_percentages.append(result["branch_coverage_percent"])
-        warnings.append(result["warnings"])
-        warnings_count.append(result["warnings_count"])
-        pass_percentages.append(result["test_pass_rate"])
-        execution_time_sec.append(result["execution_time_sec"])
-        timeout_occurred.append(result["timeout"])
-        internal_error_occurred.append(result["internal_error_occurred"])
-        assertions_density.append(result["assertions_density"])
-        assertions_mccabe_ratio.append(result["assertions_mccabe_ratio"])
-        runtime_errors_count.append(result["runtime_errors_count"])
-        syntax_output.append(result["syntax_output"])
-
-        # except Exception as e:
-        #     print("ERROR: ", e)
-        #     append_if_not_included(count, warnings_count, None)
-        #     append_if_not_included(count, warnings, None)
-        #     append_if_not_included(count, line_coverage_percentages, None)
-        #     append_if_not_included(count, pass_percentages, None)
-        #     append_if_not_included(count, compilation_statuses, None)
-        #     append_if_not_included(count, execution_time_sec, None)
-        #     append_if_not_included(count, timeout_occurred, False)
-        #     append_if_not_included(count, assertions_density, None)
-        #     append_if_not_included(count, assertions_mccabe_ratio, None)
-        #     append_if_not_included(count, internal_error_occurred, True)
-        #     append_if_not_included(count, branch_coverage_percentages, None)
-        #     append_if_not_included(count, runtime_errors_count, None)
-        #     append_if_not_included(count, syntax_output, None)
-        #     continue
 
     df["compilation_status"] = compilation_statuses
     df["runtime_errors_count"] = runtime_errors_count
@@ -421,7 +422,7 @@ def run_analysis_go(df, model_string, lang):
     df["execution_time_sec"] = execution_time_sec
     df["warnings_count"] = warnings_count
     df["warnings"] = warnings
-    df["timeout"] = timeout_occurred
+    df["timeout_occurred"] = timeout_occurred
     df["internal_error_occurred"] = internal_error_occurred
     df["syntax_output"] = syntax_output
 
@@ -495,9 +496,7 @@ def run_analysis_python(df, model_string, lang):
             test_exec_result = None
             timeout = None
         try:
-            print("PYLINT CHECK")
             count, warning = pylint_check(test_file_path)
-            print("END PYLINT CHECK")
             warnings.append(warning)
             warnings_count.append(count)
         except Exception as e:
@@ -540,7 +539,7 @@ def run_analysis_python(df, model_string, lang):
     df["warnings_count"] = warnings_count
     df["tests_pass_rate"] = pass_percentages
     df["execution_time_sec"] = execution_time_sec
-    df["timeout"] = timeout_occurred
+    df["timeout_occurred"] = timeout_occurred
 
     df.to_csv(os.path.join(Config.get_stats_output_dir(), "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
               header=True)

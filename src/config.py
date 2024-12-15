@@ -156,4 +156,3 @@ class Config:
 def create_or_exists(directory):
     Path(directory).mkdir(parents=True, exist_ok=True)
     return directory
-

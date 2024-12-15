@@ -8,9 +8,6 @@ from src.analysis.kotlin_assertion_ratios import assertions_density_kotlin, asse
 from src.analysis.python_validation import CompileStatus
 from src.config import Config
 
-CHECKSTYLE_CONFIG = "./checkstyle-config.xml"
-TEST_REPORTS = "data/kotlinSetup/target/surefire-reports/*.xml"
-
 
 def run_ktlint(kotlin_file_path):
     """Run ktlint for a Kotlin file and return a list of style errors."""
@@ -114,8 +111,6 @@ def analyze_kotlin_tests(
     test_file_path = None
 
     try:
-        # Step 1: Copy .java files to the respective directories
-        print(input_dir)
         for file_name in os.listdir(input_dir):
             if file_name.endswith(".kt"):
                 source_path = os.path.join(input_dir, file_name)
@@ -125,19 +120,14 @@ def analyze_kotlin_tests(
                 else:
                     destination_path = os.path.join(src_dir, file_name)
                     source_file_path = destination_path
+                os.makedirs(os.path.dirname(destination_path), exist_ok=True)
                 shutil.copy(source_path, destination_path)
                 copied_files.append(destination_path)
 
-        # Step 1.5: Run 'mvn test-compile' using the extracted method
         compile_results = run_maven_test_compile(project_dir, timeout)
         syntax_maven_output, syntax, compile_timeout_occurred, compile_error = compile_results
-
-        # Update the overall timeout and error status
         timeout_occurred = timeout_occurred or compile_timeout_occurred
-        # error = error or compile_error
 
-        # Calculate assertion density and McCabe ratio
-        print(test_file_path)
         assertions_density = assertions_density_kotlin(test_file_path)
         try:
             mccabe = assertions_mccabe_ratio_kotlin(source_file_path, test_file_path)
@@ -161,18 +151,13 @@ def analyze_kotlin_tests(
                 "test_maven_output": None
             }
 
-        # Run 'mvn clean test' using the extracted method
         test_results = run_maven_clean_test(project_dir, timeout)
         test_maven_output, test_timeout_occurred, test_error, execution_time = test_results
 
-        # Update the overall timeout and error status
         timeout_occurred = timeout_occurred or test_timeout_occurred
         error = error or test_error
 
-        # Parse test report and compute pass rate
-        pass_rate, runtime_errors = parse_report_and_compute_pass_rate(TEST_REPORTS)
-
-        # Compute coverage percentage using the extracted method
+        pass_rate, runtime_errors = parse_report_and_compute_pass_rate(Config._kotlin_test_reports)
         coverage_percentage = compute_coverage_percentage(project_dir, source_file_path, timeout_occurred)
 
         return {

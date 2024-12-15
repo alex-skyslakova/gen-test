@@ -49,12 +49,11 @@ def run_tests(test_file, timeout=30):
         line_coverage = get_coverage(temp_file_path)
         branch_coverage = get_coverage(temp_file_path, branch=True)
 
-        print("LINE_COVERAGE: ", line_coverage)
-        print("BRANCH_COVERAGE: ", branch_coverage)
+        print("Line coverage: ", line_coverage)
+        print("Branch coverage: ", branch_coverage)
 
         runtime_errors = 0
 
-        # Print outputs for debugging (optional)
         print("STDOUT:")
         print(stdout.decode())
         print("STDERR:")
@@ -72,7 +71,7 @@ def run_tests(test_file, timeout=30):
                 if error != "AssertionError":  # Explicitly exclude AssertionError
                     runtime_errors += 1
 
-        print("RUNTIME ERRORS> ", runtime_errors)
+        print("Runtime errors: ", runtime_errors)
         # Parse the pytest json report if available
         json_report_path = '.report.json'  # This is the default pytest json-report output file
         if os.path.exists(json_report_path):
@@ -86,7 +85,7 @@ def run_tests(test_file, timeout=30):
                 else:
                     pass_percentage = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
 
-                print({
+                result = {
                     'total_tests': total_tests if total_tests is not None else None,
                     'passed_tests': passed_tests,
                     'failed_tests': failed_tests,
@@ -96,24 +95,15 @@ def run_tests(test_file, timeout=30):
                     'timeout': False,
                     'branch_coverage': branch_coverage,
                     'line_coverage': line_coverage
-                })
+                }
+                print("Result: ", result)
 
-                return {
-                    'total_tests': total_tests,
-                    'passed_tests': passed_tests,
-                    'failed_tests': failed_tests,
-                    'pass_percentage': round(pass_percentage, 2) if pass_percentage is not None else None,
-                    'execution_time': exec_time,
-                    'runtime_errors': runtime_errors,
-                    'timeout': False,
-                    'line_coverage': line_coverage,
-                    'branch_coverage': branch_coverage
-                }, False
+                return result, False
         else:
             print("Test report not found.")
             return None, False
     except Exception as e:
-        print("ERROR OCCURRED AFTER COVERAGE: ", e)
+        print("Error occurred: ", e)
     finally:
         os.chdir(original_dir)
         shutil.rmtree(temp_dir)

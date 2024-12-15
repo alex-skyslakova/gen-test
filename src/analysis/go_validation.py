@@ -9,20 +9,15 @@ from src.config import Config
 
 def validate_go_code_with_build(go_code):
     try:
-        """Create a temporary folder, save the code from string into temp dir, and run validation."""
-        # Base directory for temporary files
         base_temp_dir = Config.get_go_input_dir()
         os.makedirs(base_temp_dir, exist_ok=True)
         temp_dir = tempfile.mkdtemp(dir=base_temp_dir)
 
-        # Save the current working directory
         original_cwd = os.getcwd()
 
         try:
-            # Change to temporary directory
             os.chdir(temp_dir)
 
-            # Write the code to a file in the temp directory
             go_file_name = 'temp.go'
             with open(go_file_name, 'x') as f:
                 f.write(go_code)

@@ -2,12 +2,8 @@ import concurrent.futures
 import json
 import re
 
-import pandas as pd
-
+from src.config import Config
 from src.language import LanguageEnum
-
-GENERATED_DIR = "../data/generated/docs_python/"
-STATS_DIR = "../data/generated/docs_stats/"
 
 
 def run_with_timeout(func, timeout):
@@ -21,7 +17,6 @@ def run_with_timeout(func, timeout):
 
 
 def clean_string(input_string):
-    # Remove non-breaking spaces and any other non-ASCII characters
     cleaned_string = ''.join(c for c in input_string if ord(c) < 128)
     return cleaned_string
 
@@ -123,27 +118,23 @@ def convert_to_go_filename(input_str, model, directory=False, test=False):
 
 import os
 
-def read_generated_test(name: str, model: str, lang, data: str = None):
-    # Specify the directory name
-    directory = GENERATED_DIR + convert_to_filename(name, model, lang, directory=True, data=data)
-
-    if not os.path.exists(directory):
-        return None, None
-
-    filename = os.path.join(directory, convert_to_filename(name, model, lang, test=True, data=data))
-
-    if not os.path.exists(filename):
-        return None, None
-
-    with open(filename, "r", encoding='utf-8') as file:
-        content = file.read()
-
-    return content, filename
+def select_output_dir(language: LanguageEnum):
+    if language == LanguageEnum.Python:
+        return Config.get_python_output_dir()
+    elif language == LanguageEnum.Go:
+        return Config.get_go_output_dir()
+    elif language == LanguageEnum.Java:
+        return Config.get_java_output_dir()
+    elif language == LanguageEnum.Kotlin:
+        return Config.get_kotlin_output_dir()
+    else:
+        print("unrecognized language")
+        return
 
 
 def save_generated_test(name: str, model: str, test: str, lang):
     # Specify the directory name
-    directory = GENERATED_DIR + convert_to_filename(name, model, lang, directory=True, data=test)
+    directory = os.path.join(select_output_dir(lang), convert_to_filename(name, model, lang, directory=True, data=test))
 
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -156,8 +147,7 @@ def save_generated_test(name: str, model: str, test: str, lang):
 
 
 def save_content(name: str, model, content: str, lang):
-    # Specify the directory name
-    directory = os.path.join(GENERATED_DIR, convert_to_filename(name, model, lang, directory=True, data=content))
+    directory = os.path.join(select_output_dir(lang), convert_to_filename(name, model, lang, directory=True, data=content))
 
     # Create the directory in the current working directory
     if not os.path.exists(directory):
@@ -185,7 +175,6 @@ class_pattern = r'\bpublic\s+class\s+(\w+)\b'
 
 
 def get_public_class_name(file_path):
-    """Reads a Java file and returns the name of the public class, if found."""
     with open(file_path, 'r') as file:
         content = file.read()
         match = re.search(class_pattern, content)
@@ -195,74 +184,6 @@ def get_public_class_name(file_path):
             return g  # Return the class name if found
 
     return None
-
-
-def rename_java_files(base_dir):
-    """Renames .java files in each subdirectory (excluding *Test.java files) to the public class name."""
-    for subdir, _, files in os.walk(base_dir):
-        for file_name in files:
-            # Process only .java files that do not contain 'Test' in their name
-            if file_name.endswith('.java') and 'Test' not in file_name:
-                file_path = os.path.join(subdir, file_name)
-
-                # Get the name of the public class from the file
-                public_class_name = get_public_class_name(file_path)
-
-                if public_class_name:
-                    # Create the new file path with the public class name
-                    new_file_path = os.path.join(subdir, f"{public_class_name}.java")
-
-                    # Rename the file if the new name is different
-                    if new_file_path != file_path:
-                        os.rename(file_path, new_file_path)
-                        print(f"Renamed '{file_path}' to '{new_file_path}'")
-                else:
-                    print(f"No public class found in '{file_path}', skipping.")
-
-
-def verify_required_env_vars(required_env_vars):
-    """
-    Verify that all required environment variables contain non-empty values.
-    """
-    missing_or_empty_keys = []
-
-    for key in required_env_vars:
-        value = os.getenv(key)
-        if not value:  # Check if the value is None or empty
-            missing_or_empty_keys.append(key)
-
-    if missing_or_empty_keys:
-        print("The following environment variables are missing or empty:")
-        for key in missing_or_empty_keys:
-            print(f"- {key}")
-        return False
-
-    print("All required API key environment variables are set.")
-    return True
-
-
-def filter_csv_columns(input_files):
-    columns_to_keep = [
-        "task_name", "task_description", "language_name", "code", "code_length", "line_count",
-        "generated_code", "file_path", "compilation_status", "runtime_errors_count",
-        "line_coverage_percent", "branch_coverage_percent", "assertions_density",
-        "assertions_mccabe_ratio", "tests_pass_percentage", "execution_time_sec",
-        "warnings_count", "warnings", "timeout_occurred", "internal_error_occurred",
-        "syntax_failure_cause", "syntax_maven_output", "syntax_output", "test_maven_output"
-    ]
-
-    filtered_data = {}
-
-    for file in input_files:
-        print(f"Processing file: {file}")
-        try:
-            df = pd.read_csv(file)
-            existing_columns = [col for col in columns_to_keep if col in df.columns]
-            filtered_data[file] = df[existing_columns]
-        except Exception as e:
-            print(f"Error processing file {file}: {e}")
-
-    return filtered_data
 
 
 def find_output(json_file, input_argument):
@@ -286,8 +207,6 @@ def find_output(json_file, input_argument):
 def extract_code_blocks(text: str, language: str):
     # Regex pattern to find code blocks enclosed in triple backticks with a language specifier
     pattern = re.compile(rf"```{language}\s*(.*?)```", re.DOTALL)
-
-    # Find all matches in the input text
     matches = pattern.findall(text)
 
     if not matches:
@@ -295,5 +214,4 @@ def extract_code_blocks(text: str, language: str):
             return "none"
         else:
             return "error"
-    # Concatenate all code blocks
     return "\n".join(matches)
