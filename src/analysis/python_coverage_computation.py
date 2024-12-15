@@ -24,8 +24,6 @@ def timeout_handler(a, b):
 
 @pytest.mark.timeout(30, signal)  # Optional timeout for individual tests
 def get_coverage(filename, branch=False):
-    print("==========COVERAGE")
-
     directory = os.path.dirname(filename)
 
     if branch:

@@ -27,7 +27,6 @@ def run_tests(test_file, timeout=30):
         os.chdir(temp_dir)
 
         # Run pytest in the copied test file with subprocess
-        print("==========PASS RATE START")
         args = ["pytest", temp_file_path, "--tb=short", "-q", "--json-report"]
         process = subprocess.Popen(
             args,
@@ -75,7 +74,7 @@ def run_tests(test_file, timeout=30):
 
         print("RUNTIME ERRORS> ", runtime_errors)
         # Parse the pytest json report if available
-        json_report_path = '../../.report.json'  # This is the default pytest json-report output file
+        json_report_path = '.report.json'  # This is the default pytest json-report output file
         if os.path.exists(json_report_path):
             with open(json_report_path, 'r') as json_file:
                 test_report = json.load(json_file)
@@ -98,7 +97,6 @@ def run_tests(test_file, timeout=30):
                     'branch_coverage': branch_coverage,
                     'line_coverage': line_coverage
                 })
-                print("==========PASS RATE END")
 
                 return {
                     'total_tests': total_tests,

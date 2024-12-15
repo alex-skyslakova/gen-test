@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 
 import numpy as np
@@ -6,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from src.config import Config
 from src.helpers import extract_llm_model
 
 
@@ -66,7 +68,7 @@ def get_type_of_warning_count(findings):
     }
 
 
-def analyze_python_warnings(paths):
+def analyze_code_quality_python(paths):
     analysis = pd.DataFrame(columns=["model", "fatal", "error", "warning", "convention", "refactor", "information", "all"])
     for path in paths:
         df = pd.read_csv(path)
@@ -102,9 +104,6 @@ def analyze_python_warnings(paths):
     aggs = [grouped.median(), grouped.mean(), grouped.sum()]
     types = ["Medians", "Means", "Sums"]
 
-    # Plot heatmaps
-    metrics = ["fatal", "error", "warning", "convention", "refactor", "information"]
-
     for i in range(3):
         data = aggs[i]
         type = types[i]
@@ -119,10 +118,4 @@ def analyze_python_warnings(paths):
         plt.xlabel("Metrics")
         plt.ylabel("LLM")
         plt.tight_layout()
-        plt.savefig("./data/plots/python_code_quality_{}.png".format(type))
-        plt.show()
-
-
-# analyze_python_warnings(["/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Python_stats_deepseek_coder.csv",
-#                          "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Python_stats_gemini_1_5_pro_002.csv",
-#                          "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Python_stats_gpt_4o_2024_08_06.csv"])
+        plt.savefig(os.path.join(Config.get_plots_dir(), "python_code_quality_{}.png".format(type)))

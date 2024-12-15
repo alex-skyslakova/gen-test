@@ -26,9 +26,6 @@ from src.analysis.go_validation import validate_go_code_with_build
 
 LANGUAGES_TO_KEEP = {"Python", "Java", "Kotlin", "Go"}
 
-# GENERATED_DIR = "./data/generated/docs_python/"
-# STATS_DIR = "./data/generated/docs_stats/"
-
 
 def download_and_validate_dataset(use_existing_generated_data=True):
     if use_existing_generated_data:
@@ -45,7 +42,7 @@ def download_and_validate_dataset(use_existing_generated_data=True):
 
         language_data_dict = {}
         for lang in LANGUAGES_TO_KEEP:
-            filtered_df = train_df[train_df['language_name'] == lang]
+            filtered_df = train_df[train_df['language_name'] == lang].head(30)
             filtered_df['code_length'] = filtered_df['code'].str.len()
             filtered_df['line_count'] = filtered_df['code'].apply(lambda x: len(x.split('\n')))
             if lang == "Python":
@@ -349,6 +346,7 @@ def run_analysis_go(df, model_string, lang):
     assertions_density = []
     assertions_mccabe_ratio = []
     runtime_errors_count = []
+    syntax_output = []
     count = 0
 
     for index, row in df.copy(deep=True).iterrows():
@@ -371,6 +369,7 @@ def run_analysis_go(df, model_string, lang):
             assertions_density.append(None)
             assertions_mccabe_ratio.append(None)
             runtime_errors_count.append(None)
+            syntax_output.append(None)
             continue
         go_file = os.path.join(os.path.dirname(filename),
                                Path(filename).name.replace("_test.go", ".go").replace(model_string + "_",
@@ -393,6 +392,7 @@ def run_analysis_go(df, model_string, lang):
         assertions_density.append(result["assertions_density"])
         assertions_mccabe_ratio.append(result["assertions_mccabe_ratio"])
         runtime_errors_count.append(result["runtime_errors_count"])
+        syntax_output.append(result["syntax_output"])
 
         # except Exception as e:
         #     print("ERROR: ", e)
@@ -408,6 +408,7 @@ def run_analysis_go(df, model_string, lang):
         #     append_if_not_included(count, internal_error_occurred, True)
         #     append_if_not_included(count, branch_coverage_percentages, None)
         #     append_if_not_included(count, runtime_errors_count, None)
+        #     append_if_not_included(count, syntax_output, None)
         #     continue
 
     df["compilation_status"] = compilation_statuses
@@ -422,6 +423,7 @@ def run_analysis_go(df, model_string, lang):
     df["warnings"] = warnings
     df["timeout"] = timeout_occurred
     df["internal_error_occurred"] = internal_error_occurred
+    df["syntax_output"] = syntax_output
 
     df.to_csv(os.path.join(Config.get_stats_output_dir(), "filtered_{}_stats_{}.csv".format(lang.name, model_string)), index=False,
               header=True)
@@ -544,37 +546,3 @@ def run_analysis_python(df, model_string, lang):
               header=True)
 
     return df
-
-#
-# if __name__ == '__main__':
-#     # required_env_vars = []
-#     # all_env_vars_set = verify_required_env_vars(required_env_vars)
-#     # if not all_env_vars_set:
-#     #     exit(1)
-#
-#     languages = [LanguageEnum.Java, LanguageEnum.Python, LanguageEnum.Kotlin, LanguageEnum.Go]
-#     dataset = download_and_validate_dataset()
-#     filtered = filter_dataset(dataset)
-#
-#     ALL = False
-#     ONLY_ANALYSIS = True
-#     if ONLY_ANALYSIS:
-#         for l in languages:
-#             for m in [Model.GPT_4o, Model.GEMINI_1_5_pro, Model.DEEPSEEK_CODER]:
-#                 generated_df = read_csv("data/generated/docs_stats/filtered_{}_stats_{}.csv".format(l.name, m.value))
-#                 run_analysis(l, generated_df, m.value)
-#     elif ALL:
-#         for l in languages:
-#             for m in Model:
-#                 generated_df = generate_tests(m, filtered[l.name], l)
-#                 run_analysis(l, generated_df, m.value)
-#     else:
-#         language = LanguageEnum.Python
-#         model = Model.GPT_4o
-#         # generated_df = generate_tests(model, filtered[language.name], language)
-#         generated_df = read_csv("data/generated/docs_stats/filtered_Python_stats_gpt_4o_2024_08_06.csv")
-#         run_analysis_python(generated_df, model.value, language)
-#
-#     create_combined_score_stats()
-#     present_results_as_plots()
-#     #analyze_go_tests("data/generated/docs_golang/list_rooted_trees/list_rooted_trees.go", "data/generated/docs_golang/list_rooted_trees/deepseek_coder_list_rooted_trees_test.go")

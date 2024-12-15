@@ -6,22 +6,17 @@ from src.analysis.java_analysis import run_maven_test_compile, run_maven_clean_t
     parse_report_and_compute_pass_rate
 from src.analysis.kotlin_assertion_ratios import assertions_density_kotlin, assertions_mccabe_ratio_kotlin
 from src.analysis.python_validation import CompileStatus
+from src.config import Config
 
-KOTLIN_SRC_DIR = 'data/kotlinSetup/src/main/kotlin/org/example/package'
-KOTLIN_TEST_DIR = 'data/kotlinSetup/src/test/kotlin/org/example/package'
-KOTLIN_PROJECT_ROOT = 'data/kotlinSetup'
-KTLINT_PATH = "./ktlint.jar"
 CHECKSTYLE_CONFIG = "./checkstyle-config.xml"
 TEST_REPORTS = "data/kotlinSetup/target/surefire-reports/*.xml"
-
-os.environ['PATH'] += ':/opt/homebrew/bin/kotlinc'
 
 
 def run_ktlint(kotlin_file_path):
     """Run ktlint for a Kotlin file and return a list of style errors."""
     try:
         result = subprocess.run(
-            ['java', '-jar', KTLINT_PATH, kotlin_file_path],
+            ['java', '-jar', Config.get_ktlint_path(), kotlin_file_path],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
 
@@ -106,9 +101,9 @@ def get_code_file_path(test_file_path):
 def analyze_kotlin_tests(
         input_dir,
         test_input_file_path,
-        src_dir=KOTLIN_SRC_DIR,
-        test_dir=KOTLIN_TEST_DIR,
-        project_dir=KOTLIN_PROJECT_ROOT,
+        src_dir=Config.get_kotlin_src_dir(),
+        test_dir=Config.get_kotlin_test_dir(),
+        project_dir=Config.get_kotlin_project_root(),
         timeout=30
 ):
     # Track copied files for cleanup later

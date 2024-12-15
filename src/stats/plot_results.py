@@ -7,7 +7,11 @@ import matplotlib.pyplot as plt
 import os
 import re
 
+from src.stats.go_code_quality import analyze_code_quality_go
 from src.config import Config
+from src.stats.java_code_quality import analyze_code_quality_java
+from src.stats.kotlin_code_quality import analyze_code_quality_kotlin
+from src.stats.python_code_quality import analyze_code_quality_python
 
 # Input files
 input_files = [
@@ -20,9 +24,9 @@ input_files = [
     'data/generated/docs_stats/filtered_Kotlin_stats_gpt_4o_2024_08_06.csv',
     'data/generated/docs_stats/filtered_Kotlin_stats_gemini_1_5_pro_002.csv',
     'data/generated/docs_stats/filtered_Kotlin_stats_deepseek_coder.csv',
-    'data/generated/docs_stats/filtered_Go_stats_gpt_4o_2024_08_06.csv',
-    'data/generated/docs_stats/filtered_Go_stats_gemini_1_5_pro_002.csv',
-    'data/generated/docs_stats/filtered_Go_stats_deepseek_coder.csv',
+    os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_gpt_4o_2024_08_06.csv'),
+    os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_gemini_1_5_pro_002.csv'),
+    os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_deepseek_coder.csv'),
 ]
 
 # Required columns
@@ -94,7 +98,7 @@ def plot_all_metrics_heatmap():
 
     plt.tight_layout()
     plt.savefig("data/plots/all_metrics_median.png")
-    plt.show()
+    #plt.show()
 
     #Plot the mean heatmap
     plt.figure(figsize=(22, 20))
@@ -113,8 +117,8 @@ def plot_all_metrics_heatmap():
                         ha="center", va="center", color="black", fontsize=25)
 
     plt.tight_layout()
-    plt.savefig("data/plots/all_metrics_mean.png")
-    plt.show()
+    plt.savefig(os.path.join(Config.get_plots_dir(), "all_metrics_mean.png"))
+    #plt.show()
 
 
 
@@ -200,8 +204,8 @@ def analyze_and_plot_with_model(input_files):
     plt.xticks(rotation=45, ha='right')
     plt.legend(loc="upper right")
     plt.tight_layout()
-    plt.savefig("data/plots/compilation_and_runtime.png")
-    plt.show()
+    plt.savefig(os.path.join(Config.get_plots_dir(), "compilation_and_runtime.png"))
+    #plt.show()
 
     return analysis_summary
 
@@ -279,9 +283,9 @@ def analyze_timeout(files):
         )
 
     plt.tight_layout()
-    plt.savefig("data/plots/timeout.png")
+    plt.savefig(os.path.join(Config.get_plots_dir(), "timeout.png"))
 
-    plt.show() # TODO REMOVE
+    #plt.show() # TODO REMOVE
     # Plotting the mean execution times
     plt.figure(figsize=(10, 6))
     bars = plt.bar(exec_time_df['analysis'], exec_time_df['execution_time_sec'], color='green')
@@ -303,10 +307,7 @@ def analyze_timeout(files):
         )
 
     plt.tight_layout()
-    plt.savefig("data/plots/time_exec_mean.png")
-
-    # Show the plot
-    plt.show() # TODO REMOVE
+    plt.savefig(os.path.join(Config.get_plots_dir(), "time_exec_mean.png"))
 
 
 def plot_coverage(files):
@@ -386,8 +387,8 @@ def plot_coverage(files):
         plt.ylabel("LLM-Language", fontsize=20)
         plt.xlabel("Metrics", fontsize=20)
         plt.tight_layout()
-        plt.savefig("data/plots/coverage_median_heatmap")
-        plt.show() # TODO REMOVE
+        plt.savefig(os.path.join(Config.get_plots_dir(), "coverage_median_heatmap.png"))
+        #plt.show() # TODO REMOVE
 
         # Assuming you already have the `grouped_medians` DataFrame and a column `language_name`
         mask = np.zeros(grouped_means.shape, dtype=bool)  # Start with all False
@@ -412,8 +413,8 @@ def plot_coverage(files):
         plt.ylabel("LLM-Language", fontsize=20)
         plt.xlabel("Metrics", fontsize=20)
         plt.tight_layout()
-        plt.savefig("data/plots/coverage_mean_heatmap")
-        plt.show() # TODO REMOVE
+        plt.savefig(os.path.join(Config.get_plots_dir(), "coverage_mean_heatmap.png"))
+        #plt.show() # TODO REMOVE
         #
         # # Plot the mean heatmap
         # plt.figure(figsize=(12, 15))
@@ -427,6 +428,15 @@ def plot_coverage(files):
         # plt.savefig("data/plots/coverage_mean_heatmap")
         # plt.show()
 
+def quality_analysis(input_files):
+    python_files = [file for file in input_files if "filtered_Python_stats_" in file]
+    java_files = [file for file in input_files if "filtered_Java_stats_" in file]
+    kotlin_files = [file for file in input_files if "filtered_Kotlin_stats_" in file]
+    go_files = [file for file in input_files if "filtered_Go_stats_" in file]
+    #analyze_code_quality_python(python_files)
+    #analyze_code_quality_java(java_files)
+    #analyze_code_quality_kotlin(kotlin_files)
+    analyze_code_quality_go(go_files)
 
 
 def present_results_as_plots():  # TODO add choice between DP stats and own stats
@@ -434,18 +444,4 @@ def present_results_as_plots():  # TODO add choice between DP stats and own stat
     analyze_and_plot_with_model(input_files)
     analyze_timeout(input_files)
     plot_coverage([os.path.join(Config.get_stats_output_dir(), "combined_stats.csv")])
-
-present_results_as_plots()
-# for file in input_files:
-#     columns_to_keep = ["task_name", "task_description", "language_name", "code", "code_length", "line_count", "generated_code", "file_path", "compilation_status", "runtime_errors_count", "line_coverage_percent", "branch_coverage_percent", "assertions_density", "assertions_mccabe_ratio", "tests_pass_percentage", "execution_time_sec", "warnings_count", "warnings", "timeout_occurred", "internal_error_occurred", "syntax_failure_cause", "syntax_maven_output", "test_maven_output"]
-#     print(file)
-#     f = pd.read_csv(file)
-#     existing_columns = [col for col in columns_to_keep if col in f.columns]
-#     f = f[existing_columns]
-#     f.to_csv(file, index=False)
-
-
-# Example Usage
-# Replace with actual input file paths
-# analysis_results = analyze_timeout(input_files)
-# files = pd.read_csv("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/combined_stats.csv")
+    quality_analysis(input_files)

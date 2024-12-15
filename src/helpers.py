@@ -248,7 +248,7 @@ def filter_csv_columns(input_files):
         "line_coverage_percent", "branch_coverage_percent", "assertions_density",
         "assertions_mccabe_ratio", "tests_pass_percentage", "execution_time_sec",
         "warnings_count", "warnings", "timeout_occurred", "internal_error_occurred",
-        "syntax_failure_cause", "syntax_maven_output", "test_maven_output"
+        "syntax_failure_cause", "syntax_maven_output", "syntax_output", "test_maven_output"
     ]
 
     filtered_data = {}

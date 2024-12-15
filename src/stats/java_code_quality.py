@@ -1,6 +1,9 @@
+import os
+
 import numpy as np
 import pandas as pd
 
+from src.config import Config
 from src.helpers import extract_llm_model
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -108,10 +111,4 @@ def analyze_code_quality_java(paths):
         plt.xlabel("Metrics")
         plt.ylabel("LLM")
         plt.tight_layout()
-        plt.savefig("./data/plots/java_code_quality_{}.png".format(type))
-        plt.show()
-
-# files = ["/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Java_stats_deepseek_coder.csv",
-#          "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Java_stats_gemini_1_5_pro_002.csv",
-#          "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv"]
-# analyze_code_quality_java(files)
+        plt.savefig(os.path.join(Config.get_plots_dir(), "java_code_quality_{}.png".format(type)))
