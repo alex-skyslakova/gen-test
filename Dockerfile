@@ -4,7 +4,7 @@ FROM python:3.10.9-slim
 # Set environment variables for Go and Kotlin
 ENV PATH="/usr/local/go/bin:$PATH"
 ENV KOTLIN_HOME="/opt/kotlin"
-ENV PATH="$KOTLIN_HOME/bin:$PATH"
+ENV PATH="$KOTLIN_HOME/kotlinc/bin:$PATH"
 
 # Install required system dependencies
 RUN apt-get update && apt-get install -y \
@@ -26,6 +26,8 @@ RUN wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz && \
     rm go1.23.3.linux-amd64.tar.gz
 
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOROOT)/bin v1.62.2
+
 # Install Amazon Corretto JDK 21.0.1.12.1
 # Install Amazon Corretto 21
 RUN apt-get update && apt-get install -y wget gnupg && \
@@ -44,6 +46,12 @@ RUN wget -O kotlin-compiler.zip https://github.com/JetBrains/kotlin/releases/dow
     unzip kotlin-compiler.zip -d /opt/kotlin && \
     rm kotlin-compiler.zip
 
+# Install bash (required for kotlinc)
+RUN apt-get update && apt-get install -y bash
+
+# Add Kotlin to PATH
+ENV PATH="/opt/kotlin/kotlinc/bin:$PATH"
+
 # Install ktlint 0.50.0
 RUN wget -O /opt/ktlint.jar https://github.com/pinterest/ktlint/releases/download/0.50.0/ktlint && \
     chmod +x /opt/ktlint.jar && \
@@ -60,10 +68,17 @@ WORKDIR /app
 
 # Copy the entire project
 COPY . /app
+RUN bash -c "[ -d /app/llm-gen ] && rm -r /app/llm-gen || true && \
+              [ -d /app/llm-gen-test ] && rm -r /app/llm-gen-test || true"
+
 
 # Initialize Go project in the specified folder
 RUN cd /app/data/generated/docs_golang && \
     go mod tidy
+
+# Download dependecnies for Java and Kotlin projects for test execution
+RUN mvn -f ./data/kotlinSetup/pom.xml clean validate dependency:go-offline && \
+    mvn -f ./data/javaSetup/pom.xml clean validate dependency:go-offline
 
 # Set the entrypoint for the container
 ENTRYPOINT ["python", "main.py"]

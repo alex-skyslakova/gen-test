@@ -1,4 +1,2 @@
-/data/*
 /backup/*
-/old_analysis/*
 /.pytest_cache/
