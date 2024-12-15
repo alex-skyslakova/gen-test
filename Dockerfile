@@ -68,9 +68,6 @@ WORKDIR /app
 
 # Copy the entire project
 COPY . /app
-RUN bash -c "[ -d /app/llm-gen ] && rm -r /app/llm-gen || true && \
-              [ -d /app/llm-gen-test ] && rm -r /app/llm-gen-test || true"
-
 
 # Initialize Go project in the specified folder
 RUN cd /app/data/generated/docs_golang && \

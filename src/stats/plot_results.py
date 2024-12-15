@@ -13,17 +13,16 @@ from src.stats.java_code_quality import analyze_code_quality_java
 from src.stats.kotlin_code_quality import analyze_code_quality_kotlin
 from src.stats.python_code_quality import analyze_code_quality_python
 
-# Input files
 input_files = [
     'data/generated/docs_stats/filtered_Python_stats_gpt_4o_2024_08_06.csv',
     'data/generated/docs_stats/filtered_Python_stats_gemini_1_5_pro_002.csv',
     'data/generated/docs_stats/filtered_Python_stats_deepseek_coder.csv',
     'data/generated/docs_stats/filtered_Java_stats_gpt_4o_2024_08_06.csv',
-    'data/generated/docs_stats/filtered_Java_stats_gemini_1_5_pro_002.csv',
-    'data/generated/docs_stats/filtered_Java_stats_deepseek_coder.csv',
-    'data/generated/docs_stats/filtered_Kotlin_stats_gpt_4o_2024_08_06.csv',
-    'data/generated/docs_stats/filtered_Kotlin_stats_gemini_1_5_pro_002.csv',
-    'data/generated/docs_stats/filtered_Kotlin_stats_deepseek_coder.csv',
+    os.path.join(Config.get_stats_output_dir(), 'filtered_Java_stats_gemini_1_5_pro_002.csv'),
+    os.path.join(Config.get_stats_output_dir(), 'filtered_Java_stats_deepseek_coder.csv'),
+    os.path.join(Config.get_stats_output_dir(), 'filtered_Kotlin_stats_gpt_4o_2024_08_06.csv'),
+    os.path.join(Config.get_stats_output_dir(), 'filtered_Kotlin_stats_gemini_1_5_pro_002.csv'),
+    os.path.join(Config.get_stats_output_dir(), 'filtered_Kotlin_stats_deepseek_coder.csv'),
     os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_gpt_4o_2024_08_06.csv'),
     os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_gemini_1_5_pro_002.csv'),
     os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_deepseek_coder.csv'),
@@ -42,12 +41,11 @@ group_columns = ["language_name", "llm_model"]  # Columns to group by
 def plot_all_metrics_heatmap():
     combined_df = pd.read_csv(os.path.join(Config.get_stats_output_dir(), "combined_stats.csv"))
 
-    # Define column names
     first_three_columns = ['correct_response_score', 'compilation_status_score',
-        'runtime_errors_score']  # Replace with actual column names
+        'runtime_errors_score']
     rest_columns = ['line_coverage_score', 'branch_coverage_score',
         'execution_time_score', 'assertions_mccabe_ratio_score',
-        'assertions_density_score', 'warnings_count_score']  # Replace with actual column names
+        'assertions_density_score', 'warnings_count_score']
 
     # Compute passed_compilation_and_runtime condition
     combined_df['passed_compilation_and_runtime'] = (
@@ -55,7 +53,6 @@ def plot_all_metrics_heatmap():
         (combined_df['runtime_errors_score'] == 1)
     )
 
-    # Compute statistics for the first three columns
     grouped_first_three = combined_df.groupby(group_columns)[first_three_columns]
     first_three_means = grouped_first_three.mean()
     first_three_medians = grouped_first_three.median()
@@ -68,16 +65,15 @@ def plot_all_metrics_heatmap():
     rest_means = grouped_rest.mean()
     rest_medians = grouped_rest.median()
 
-    # Combine results
     mean_results = pd.concat([first_three_means, rest_means], axis=1)
     mean_results['total_score'] = mean_results.sum(axis=1)
     median_results = pd.concat([first_three_medians, rest_medians], axis=1)
     median_results['total_score'] = median_results.sum(axis=1)
 
-    mask_mean = np.zeros(mean_results.shape, dtype=bool)  # Start with all False
+    mask_mean = np.zeros(mean_results.shape, dtype=bool)
     mask_mean[:, mean_results.columns.get_loc('total_score')] = True
 
-    mask_median = np.zeros(median_results.shape, dtype=bool)  # Start with all False
+    mask_median = np.zeros(median_results.shape, dtype=bool)
     mask_median[:, median_results.columns.get_loc('total_score')] = True
 
     # Plot the heatmap for medians
@@ -118,22 +114,17 @@ def plot_all_metrics_heatmap():
 
     plt.tight_layout()
     plt.savefig(os.path.join(Config.get_plots_dir(), "all_metrics_mean.png"))
-    #plt.show()
-
 
 
 def analyze_and_plot_with_model(input_files):
-    # Initialize a DataFrame to store analysis results
     analysis_summary = pd.DataFrame(columns=["Language-LLM_Model",  "Faulty Code In Response", "Could Not Generate Test",
                                              "Passed Compilation and Runtime",
                                              "Failed on Runtime", "Failed on Compilation/Syntax"])
 
     for file in input_files:
-        # Extract LLM model from the filename
         llm_model_match = re.search(r"stats_(\w+)", os.path.basename(file))
         llm_model = llm_model_match.group(1) if llm_model_match else "Unknown"
 
-        # Read the CSV file
         df = pd.read_csv(file)
 
         # Ensure required columns exist
@@ -145,13 +136,11 @@ def analyze_and_plot_with_model(input_files):
         language_name = df['language_name'].iloc[0] if not df['language_name'].isnull().all() else "Unknown"
         column_label = f"{language_name} {llm_model}"
 
-        # Create new columns
         df['failed_on_runtime'] = (df['compilation_status'] == 'CompileStatus.OK') & (
                     (df['runtime_errors_count'] > 0) | (df['runtime_errors_count'].isna()))
         df['passed_compilation_and_runtime'] = (df['compilation_status'] == 'CompileStatus.OK') & (
                 df['runtime_errors_count'] == 0)
 
-        # Compute metrics
         could_not_generate_test = (df['generated_code'] == 'none').sum()
         failed_to_parse_response = (df['generated_code'] == 'error').sum()
 
@@ -182,7 +171,6 @@ def analyze_and_plot_with_model(input_files):
         "Failed on Compilation/Syntax": "red"
     }
 
-    # Plot the results
     analysis_summary.set_index("Language-LLM_Model", inplace=True)
     ax = analysis_summary.plot(
         kind='bar',
@@ -192,7 +180,6 @@ def analyze_and_plot_with_model(input_files):
         color=[custom_colors[col] for col in analysis_summary.columns]
     )
 
-    # Add annotations for non-null counts only
     for bar_group in ax.containers:
         labels = [f"{int(v)}" if v > 0 else "" for v in bar_group.datavalues]
         ax.bar_label(bar_group, labels=labels, label_type='center', fontsize=12, color='black', weight='bold')
@@ -205,38 +192,30 @@ def analyze_and_plot_with_model(input_files):
     plt.legend(loc="upper right")
     plt.tight_layout()
     plt.savefig(os.path.join(Config.get_plots_dir(), "compilation_and_runtime.png"))
-    #plt.show()
 
     return analysis_summary
 
 
 def analyze_timeout(files):
-    # Initialize an empty list to store timeout_results
     timeout_results = []
     exec_time_results = []
 
-    # Iterate through each file
     for file in files:
         print(file)
         llm_model_match = re.search(r"stats_(\w+)", os.path.basename(file))
         llm_model = llm_model_match.group(1) if llm_model_match else "Unknown"
 
-        # Read the CSV file
         df = pd.read_csv(file)
 
-        # Ensure required columns exist
         if 'language_name' not in df.columns or 'compilation_status' not in df.columns or 'runtime_errors_count' not in df.columns:
             print(f"Required columns missing in file: {file}")
             continue
 
-        # Create the combination column for graph labels
         language_name = df['language_name'].iloc[0] if not df['language_name'].isnull().all() else "Unknown"
         column_label = f"{language_name} {llm_model}"
 
-        # Count how many times 'timeout_occurred' is True
         timeout_count = df['timeout_occurred'].sum()
 
-        # Get the list of 'task_name' values where 'timeout_occurred' is True
         task_names = df.loc[df['timeout_occurred'] == True, 'task_name'].tolist()
 
         # Append the result as a dictionary to the timeout_results list
@@ -263,11 +242,9 @@ def analyze_timeout(files):
 
     exec_time_df = pd.DataFrame(exec_time_results)
 
-    # Plotting the timeout counts
     plt.figure(figsize=(10, 6))
     bars = plt.bar(summary_df['analysis'], summary_df['timeout_count'], color='skyblue')
 
-    # Add labels and title
     plt.title("Timeout Occurrences", fontsize=16)
     plt.xlabel("Language-LLM", fontsize=12)
     plt.ylabel("Timeout Count", fontsize=12)
@@ -285,8 +262,6 @@ def analyze_timeout(files):
     plt.tight_layout()
     plt.savefig(os.path.join(Config.get_plots_dir(), "timeout.png"))
 
-    #plt.show() # TODO REMOVE
-    # Plotting the mean execution times
     plt.figure(figsize=(10, 6))
     bars = plt.bar(exec_time_df['analysis'], exec_time_df['execution_time_sec'], color='green')
 
@@ -311,10 +286,8 @@ def analyze_timeout(files):
 
 
 def plot_coverage(files):
-    # Required columns
-    columns_to_select = ['language_name', 'llm_model', 'line_coverage_score', 'branch_coverage_score', 'assertions_density_score', 'assertions_mccabe_ratio_score',
-
-                         ]
+    columns_to_select = ['language_name', 'llm_model', 'line_coverage_score', 'branch_coverage_score',
+                         'assertions_density_score', 'assertions_mccabe_ratio_score']
 
     group_columns = ["language_name", "llm_model"]  # Columns to group by
 
@@ -323,19 +296,9 @@ def plot_coverage(files):
 
     for file in files:
         try:
-            # Load the CSV file
             df = pd.read_csv(file)
             print(f"Processing {file}...")
-            print(f"Columns in {file}: {df.columns}")
 
-            # Extract the LLM model from the file name using regex
-            # llm_model_match = re.search(r"stats_(\w+)", os.path.basename(file))
-            # llm_model = llm_model_match.group(1) if llm_model_match else "Unknown"
-            #
-            # # Add the LLM model as a column
-            # df['llm_model'] = llm_model
-
-            # Check if required columns exist
             if not all(col in df.columns for col in columns_to_select):
                 print(f"Skipping file {file}: Required columns not found.")
                 continue
@@ -343,20 +306,16 @@ def plot_coverage(files):
             df['passed_compilation_and_runtime'] = (df['compilation_status'] == 'CompileStatus.OK') & (
                         df['runtime_errors_count'] == 0)
             df = df[df['passed_compilation_and_runtime'] == True]
-            # Select only the necessary columns
             df = df[columns_to_select]
 
-            # Append data to the combined DataFrame
             combined_df = pd.concat([combined_df, df], ignore_index=True)
         except Exception as e:
             print(f"Error processing file {file}: {e}")
 
-    # Check if there is any data to process
     if combined_df.empty:
         print("No valid data found in input files.")
     else:
 
-        # Group by language and llm and compute median and mean
         grouped = combined_df.groupby(group_columns)
         grouped_medians = grouped.median()
         grouped_medians['count of values'] = grouped.size()
@@ -364,9 +323,7 @@ def plot_coverage(files):
         grouped_means = grouped.mean()
         grouped_means['count of values'] = grouped.size()
 
-        # Assuming you already have the `grouped_medians` DataFrame and a column `language_name`
-        mask = np.zeros(grouped_medians.shape, dtype=bool)  # Start with all False
-        # Mask the 'count' column
+        mask = np.zeros(grouped_medians.shape, dtype=bool)
         mask[:, grouped_medians.columns.get_loc('count of values')] = True
 
         # Plot the median heatmap
@@ -388,14 +345,10 @@ def plot_coverage(files):
         plt.xlabel("Metrics", fontsize=20)
         plt.tight_layout()
         plt.savefig(os.path.join(Config.get_plots_dir(), "coverage_median_heatmap.png"))
-        #plt.show() # TODO REMOVE
 
-        # Assuming you already have the `grouped_medians` DataFrame and a column `language_name`
-        mask = np.zeros(grouped_means.shape, dtype=bool)  # Start with all False
-        # Mask the 'count' column
+        mask = np.zeros(grouped_means.shape, dtype=bool)
         mask[:, grouped_means.columns.get_loc('count of values')] = True
 
-        # Plot the median heatmap
         plt.figure(figsize=(14, 18))
         ax = sns.heatmap(grouped_means, annot=True, cbar=True, fmt=".2f", annot_kws={"size": 25}, vmin=0, vmax=1, mask=mask, cmap="YlOrBr")
 
@@ -414,28 +367,16 @@ def plot_coverage(files):
         plt.xlabel("Metrics", fontsize=20)
         plt.tight_layout()
         plt.savefig(os.path.join(Config.get_plots_dir(), "coverage_mean_heatmap.png"))
-        #plt.show() # TODO REMOVE
-        #
-        # # Plot the mean heatmap
-        # plt.figure(figsize=(12, 15))
-        # ax = sns.heatmap(grouped_means, annot=True, cmap="coolwarm", cbar=True, fmt=".2f", annot_kws={"size": 25})
-        # ax.tick_params(axis='x', labelsize=16)
-        # ax.tick_params(axis='y', labelsize=16)
-        # plt.title("Heatmap of Coverage Metric Medians by LLM-Language", fontsize=20)
-        # plt.ylabel("LLM-Language Tuple", fontsize=20)
-        # plt.xlabel("Metrics", fontsize=20)
-        # plt.tight_layout()
-        # plt.savefig("data/plots/coverage_mean_heatmap")
-        # plt.show()
+
 
 def quality_analysis(input_files):
     python_files = [file for file in input_files if "filtered_Python_stats_" in file]
     java_files = [file for file in input_files if "filtered_Java_stats_" in file]
     kotlin_files = [file for file in input_files if "filtered_Kotlin_stats_" in file]
     go_files = [file for file in input_files if "filtered_Go_stats_" in file]
-    #analyze_code_quality_python(python_files)
-    #analyze_code_quality_java(java_files)
-    #analyze_code_quality_kotlin(kotlin_files)
+    analyze_code_quality_python(python_files)
+    analyze_code_quality_java(java_files)
+    analyze_code_quality_kotlin(kotlin_files)
     analyze_code_quality_go(go_files)
 
 

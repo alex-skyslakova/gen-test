@@ -20,8 +20,9 @@ class Config:
     _deepseek_api_key = os.getenv('DEEPSEEK_API_KEY', '')
     _output_dir = os.getenv('OUTPUT_DIR', "output")
     _action = Action(int(os.getenv('ACTION', Action.PRESENT_SAVED.value)))
-    _use_prefiltered_raw_data = os.getenv('USE_PREFILTERED_RAW_DATA', 'False').lower() == 'true' and \
-                                Action(int(os.getenv('ACTION', Action.PRESENT_SAVED.value))) == Action.GENERATE_AND_ANALYZE
+    _use_prefiltered_raw_data = os.getenv('USE_PREFILTERED_RAW_DATA', 'True').lower() == 'true' or \
+                                Action(int(os.getenv('ACTION', Action.PRESENT_SAVED.value))) != Action.GENERATE_AND_ANALYZE
+    _data_size = max([1, min([int(os.getenv('DATA_SIZE', 200)) if os.getenv('DATA_SIZE', 200).isdigit() else 200, 200])])
 
     _default_dir = "data"
     _raw_dir = "data/raw"
@@ -44,10 +45,9 @@ class Config:
     _kotlin_src_dir = "data/kotlinSetup/src/main/kotlin/org/example/package"
     _kotlin_test_dir = "data/kotlinSetup/src/test/kotlin/org/example/package"
     _kotlin_project_root = "data/kotlinSetup"
-    _ktlint_path = "ktlint.jar"
+    _ktlint_path = "/opt/ktlint.jar"
     _kotlin_checkstyle_config = "./checkstyle-config.xml"
     _kotlin_test_reports = "data/kotlinSetup/target/surefire-reports/*.xml"
-
 
     @staticmethod
     def get_action():
@@ -131,6 +131,26 @@ class Config:
     @staticmethod
     def get_raw_dir():
         return createOrExists(Config._raw_dir)
+
+    @staticmethod
+    def get_ktlint_path():
+        return Config._ktlint_path
+
+    @staticmethod
+    def get_kotlin_src_dir():
+        return Config._kotlin_src_dir
+
+    @staticmethod
+    def get_kotlin_test_dir():
+        return Config._kotlin_test_dir
+
+    @staticmethod
+    def get_kotlin_project_root():
+        return Config._kotlin_project_root
+
+    @staticmethod
+    def get_plots_dir():
+        return createOrExists(os.path.join(Config._output_dir, "plots"))
 
 
 def createOrExists(directory):
