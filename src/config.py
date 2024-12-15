@@ -18,7 +18,7 @@ class Config:
     _openai_api_key = os.getenv('OPENAI_API_KEY', '')
     _gemini_api_key = os.getenv('GEMINI_API_KEY', '')
     _deepseek_api_key = os.getenv('DEEPSEEK_API_KEY', '')
-    _output_dir = os.getenv('OUTPUT_DIR', "output")
+    _output_dir = "output"
     _action = Action(int(os.getenv('ACTION', Action.PRESENT_SAVED.value)))
     _use_prefiltered_raw_data = os.getenv('USE_PREFILTERED_RAW_DATA', 'True').lower() == 'true' or \
                                 Action(int(os.getenv('ACTION', Action.PRESENT_SAVED.value))) != Action.GENERATE_AND_ANALYZE
@@ -55,7 +55,7 @@ class Config:
 
     @staticmethod
     def get_conversations_dir():
-        return createOrExists(os.path.join(Config._output_dir, Config._conversation_dir))
+        return create_or_exists(os.path.join(Config._output_dir, Config._conversation_dir))
 
     @staticmethod
     def get_openai_api_key():
@@ -75,62 +75,62 @@ class Config:
 
     @staticmethod
     def get_stats_input_dir():
-        if Config._action == Action.GENERATE_AND_ANALYZE:
-            return createOrExists(os.path.join(Config._output_dir, Config._stats_dir))
+        if Config._action == Action.GENERATE_AND_ANALYZE or Config._action == Action.RUN_ANALYSIS_ON_SAVED:
+            return create_or_exists(os.path.join(Config._output_dir, Config._stats_dir))
         else:
-            return createOrExists(os.path.join(Config._default_dir, Config._stats_dir))
+            return create_or_exists(os.path.join(Config._default_dir, Config._stats_dir))
 
     @staticmethod
     def get_stats_output_dir():
-        return createOrExists(os.path.join(Config._output_dir, Config._stats_dir))
+        return create_or_exists(os.path.join(Config._output_dir, Config._stats_dir))
 
     @staticmethod
     def get_python_input_dir():
         if Config._action == Action.GENERATE_AND_ANALYZE:
-            return createOrExists(os.path.join(Config._output_dir, Config._python_generated_dir))
+            return create_or_exists(os.path.join(Config._output_dir, Config._python_generated_dir))
         else:
-            return createOrExists(os.path.join(Config._default_dir, Config._python_generated_dir))
+            return create_or_exists(os.path.join(Config._default_dir, Config._python_generated_dir))
 
     @staticmethod
     def get_python_output_dir():
-        return createOrExists(os.path.join(Config._output_dir, Config._python_generated_dir))
+        return create_or_exists(os.path.join(Config._output_dir, Config._python_generated_dir))
 
     @staticmethod
     def get_kotlin_input_dir():
         if Config._action == Action.GENERATE_AND_ANALYZE:
             return os.path.join(Config._output_dir, Config._kotlin_generated_dir)
         else:
-            return createOrExists(os.path.join(Config._default_dir, Config._kotlin_generated_dir))
+            return create_or_exists(os.path.join(Config._default_dir, Config._kotlin_generated_dir))
 
     @staticmethod
     def get_kotlin_output_dir():
-        return createOrExists(os.path.join(Config._output_dir, Config._kotlin_generated_dir))
+        return create_or_exists(os.path.join(Config._output_dir, Config._kotlin_generated_dir))
 
     @staticmethod
     def get_java_input_dir():
         if Config._action == Action.GENERATE_AND_ANALYZE:
-            return createOrExists(os.path.join(Config._output_dir, Config._java_generated_dir))
+            return create_or_exists(os.path.join(Config._output_dir, Config._java_generated_dir))
         else:
-            return createOrExists(os.path.join(Config._default_dir, Config._java_generated_dir))
+            return create_or_exists(os.path.join(Config._default_dir, Config._java_generated_dir))
 
     @staticmethod
     def get_java_output_dir():
-        return createOrExists(os.path.join(Config._output_dir, Config._java_generated_dir))
+        return create_or_exists(os.path.join(Config._output_dir, Config._java_generated_dir))
 
     @staticmethod
     def get_go_input_dir():
         if Config._action == Action.GENERATE_AND_ANALYZE or Config._use_prefiltered_raw_data:
-            return createOrExists(os.path.join(Config._output_dir, Config._go_generated_dir))
+            return create_or_exists(os.path.join(Config._output_dir, Config._go_generated_dir))
         else:
-            return createOrExists(os.path.join(Config._default_dir, Config._go_generated_dir))
+            return create_or_exists(os.path.join(Config._default_dir, Config._go_generated_dir))
 
     @staticmethod
     def get_go_output_dir():
-        return createOrExists(os.path.join(Config._output_dir, Config._go_generated_dir))
+        return create_or_exists(os.path.join(Config._output_dir, Config._go_generated_dir))
 
     @staticmethod
     def get_raw_dir():
-        return createOrExists(Config._raw_dir)
+        return create_or_exists(Config._raw_dir)
 
     @staticmethod
     def get_ktlint_path():
@@ -150,17 +150,10 @@ class Config:
 
     @staticmethod
     def get_plots_dir():
-        return createOrExists(os.path.join(Config._output_dir, "plots"))
+        return create_or_exists(os.path.join(Config._output_dir, "plots"))
 
 
-def createOrExists(directory):
+def create_or_exists(directory):
     Path(directory).mkdir(parents=True, exist_ok=True)
     return directory
-    # Add similar static methods for other attributes as needed
 
-#
-# print(Config.get_java_input_dir())
-# print(Config.get_stats_output_dir())
-# print(Config.get_stats_input_dir())
-# print(Config.get_action())
-# print(Config.get_conversations_dir())

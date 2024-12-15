@@ -6,46 +6,6 @@ import pandas as pd
 import os
 
 
-def find_csv_files_with_word(directory, word):
-    """
-    Finds all CSV files in a given directory that contain a specific word in their file name.
-
-    Parameters:
-        directory (str): Path to the directory to search.
-        word (str): Word to look for in the file names.
-
-    Returns:
-        list: List of matching CSV file paths.
-    """
-    matching_files = []
-    try:
-        # Iterate through all files in the directory
-        for root, _, files in os.walk(directory):
-            for file in files:
-                # Check if the file is a CSV and contains the word
-                if file.endswith(".csv") and word.lower() in file.lower():
-                    matching_files.append(os.path.join(root, file))
-    except Exception as e:
-        print(f"Error while searching for files: {e}")
-
-    return matching_files
-#
-# input_files = [
-#     'filtered_Python_stats_gpt_4o_2024_08_06.csv',
-#     'filtered_Python_stats_gemini_1_5_pro_002.csv',
-#     'filtered_Python_stats_deepseek_coder.csv',
-#     'filtered_Java_stats_gpt_4o_2024_08_06.csv',
-#     'filtered_Java_stats_gemini_1_5_pro_002.csv',
-#     'filtered_Java_stats_deepseek_coder.csv',
-#     'filtered_Kotlin_stats_gpt_4o_2024_08_06.csv',
-#     'filtered_Kotlin_stats_gemini_1_5_pro_002.csv',
-#     'filtered_Kotlin_stats_deepseek_coder.csv',
-#     'filtered_Go_stats_gpt_4o_2024_08_06.csv',
-#     'filtered_Go_stats_gemini_1_5_pro_002.csv',
-#     'filtered_Go_stats_deepseek_coder.csv',
-# ]
-
-
 def extract_llm_model(path):
     llm_model_match = re.search(r"stats_(\w+)", os.path.basename(path))
     return llm_model_match.group(1) if llm_model_match else "Unknown"
@@ -69,7 +29,6 @@ def compute_metric_scores(dfs):
         df_scores['runtime_errors_score'] = df_scores['runtime_errors_score'].fillna(0)
 
     # M3: Time of execution (normalized inverse execution time)
-    # Assuming execution time data is present in 'execution_time' column (if not, adjust accordingly)
     if 'execution_time_sec' in df_scores.columns:
         min_time = 0
         max_time = 30
@@ -118,7 +77,6 @@ def compute_metric_scores(dfs):
         'assertions_density_score', 'warnings_count_score', 'timeout_occurred',
     ]]
     return df_scores
-
 
 
 def create_combined_score_stats():

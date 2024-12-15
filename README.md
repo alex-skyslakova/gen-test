@@ -21,9 +21,9 @@ GenTest provides three actions that can be performed:
  docker build -t gen-test .
  # create a folder for the output
  mkdir my_output
- # then, run the docker image 
+ # then, run the docker image in a container
  docker run -d --name my_container -it gen-test
- # copy the output folder from the container to the host
+ # wait for container execution to finish and copy the output folder from the container to the host
  docker cp my_container:/app/output ./my_output
  
 ```
@@ -38,9 +38,9 @@ GenTest provides three actions that can be performed:
  docker build -t gen-test .
  # create a folder for the output
  mkdir my_output
- # then, run the docker image 
+ # then, run the docker image in a container
  docker run -d --name my_container -it gen-test
- # copy the output folder from the container to the host
+ # wait for container execution to finish and copy the output folder from the container to the host
  docker cp my_container:/app/output ./my_output
  
 ```
@@ -59,9 +59,9 @@ GenTest provides three actions that can be performed:
  docker build -t gen-test .
  # create a folder for the output
  mkdir my_output
- # then, run the docker image 
+ # then, run the docker image in a container
  docker run -d --name my_container -it gen-test
- # copy the output folder from the container to the host
+ # wait for container execution to finish and copy the output folder from the container to the host
  docker cp my_container:/app/output ./my_output
  
 ```
