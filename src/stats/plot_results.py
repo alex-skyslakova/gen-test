@@ -14,18 +14,18 @@ from src.stats.kotlin_code_quality import analyze_code_quality_kotlin
 from src.stats.python_code_quality import analyze_code_quality_python
 
 input_files = [
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Python_stats_gpt_4o_2024_08_06.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Python_stats_gemini_1_5_pro_002.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Python_stats_deepseek_coder.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Java_stats_gpt_4o_2024_08_06.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Java_stats_gemini_1_5_pro_002.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Java_stats_deepseek_coder.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Kotlin_stats_gpt_4o_2024_08_06.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Kotlin_stats_gemini_1_5_pro_002.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Kotlin_stats_deepseek_coder.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_gpt_4o_2024_08_06.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_gemini_1_5_pro_002.csv'),
-    os.path.join(Config.get_stats_output_dir(), 'filtered_Go_stats_deepseek_coder.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Python_stats_gpt_4o_2024_08_06.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Python_stats_gemini_1_5_pro_002.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Python_stats_deepseek_coder.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Java_stats_gpt_4o_2024_08_06.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Java_stats_gemini_1_5_pro_002.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Java_stats_deepseek_coder.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Kotlin_stats_gpt_4o_2024_08_06.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Kotlin_stats_gemini_1_5_pro_002.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Kotlin_stats_deepseek_coder.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Go_stats_gpt_4o_2024_08_06.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Go_stats_gemini_1_5_pro_002.csv'),
+    os.path.join(Config.get_stats_input_dir(), 'filtered_Go_stats_deepseek_coder.csv'),
 ]
 
 # Required columns
@@ -39,7 +39,7 @@ columns_to_select = [
 group_columns = ["language_name", "llm_model"]  # Columns to group by
 
 def plot_all_metrics_heatmap():
-    combined_df = pd.read_csv(os.path.join(Config.get_stats_output_dir(), "combined_stats.csv"))
+    combined_df = pd.read_csv(os.path.join(Config.get_stats_input_dir(), "combined_stats.csv"))
 
     first_three_columns = ['correct_response_score', 'compilation_status_score',
         'runtime_errors_score']
@@ -384,5 +384,5 @@ def present_results_as_plots():
     plot_all_metrics_heatmap()
     analyze_and_plot_with_model(input_files)
     analyze_timeout(input_files)
-    plot_coverage([os.path.join(Config.get_stats_output_dir(), "combined_stats.csv")])
+    plot_coverage([os.path.join(Config.get_stats_input_dir(), "combined_stats.csv")])
     quality_analysis(input_files)

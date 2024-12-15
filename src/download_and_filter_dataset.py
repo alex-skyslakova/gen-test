@@ -201,7 +201,7 @@ def run_analysis_kotlin(df, model_string, lang):
             test_maven_output.append(result["test_maven_output"])
 
         except Exception as e:
-            print("ERROR OCCURRED: ", e)
+            print("Error occurred: ", e)
             append_if_not_included(count, warnings_count, None)
             append_if_not_included(count, warnings, None)
             append_if_not_included(count, line_coverage_percentages, None)
@@ -257,7 +257,6 @@ def run_analysis_java(df, model_string, lang):
         count += 1
         try:
             file_path = row['file_path']
-            print("FIle path from csv: ", file_path)
             if isinstance(file_path, float) or file_path is None:
                 warnings_count.append(None)
                 warnings.append(None)
@@ -310,8 +309,6 @@ def run_analysis_java(df, model_string, lang):
             append_if_not_included(count, syntax_maven_output, None)
             append_if_not_included(count, test_maven_output, None)
 
-    print("COMPILATION_STATUSES: ", compilation_statuses)
-
     df["compilation_status"] = compilation_statuses
     df["syntax_maven_output"] = syntax_maven_output
     df["runtime_errors_count"] = runtime_errors
@@ -328,7 +325,6 @@ def run_analysis_java(df, model_string, lang):
     df["warnings_count"] = warnings_count
 
     n = "filtered_{}_stats_{}.csv".format(lang.name, model_string)
-    print("FILE WITH STATS: ", n)
 
     df.to_csv(os.path.join(Config.get_stats_output_dir(), n), index=False,
               header=True)
@@ -482,9 +478,7 @@ def run_analysis_python(df, model_string, lang):
 
         if compilation_status == CompileStatus.OK:
             try:
-                print("RUN TEST AND COMPUTE PASS RATE")
                 test_exec_result, timeout = run_tests(test_file_path)
-                print("PASS RATE END")
             except Exception as e:
                 print(e)
                 test_exec_result = None
