@@ -1,3 +1,4 @@
+import os
 import subprocess
 import json
 
@@ -6,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from src.config import Config
 from src.helpers import extract_llm_model
 
 
@@ -19,7 +21,7 @@ def run_golangci(file_path):
     #try:
     # Run golangci-lint with default settings
     result = subprocess.run(
-        ["golangci-lint", "run", "--out-format", "json", file_path],
+        ["golangci-lint", "run", "--out-format", "json", "--timeout", "60s", file_path],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -73,7 +75,7 @@ def print_issues(issues):
         print("-" * 40)
 
 
-def analyze_findings(file):
+def golangci_analysis(issues):
     tools = {
         "errcheck": 0,
         "gosimple": 0,
@@ -84,7 +86,7 @@ def analyze_findings(file):
         "typecheck": 0,
         "all": 0
     }
-    issues = run_golangci(file)
+
     if issues is None:
         return {
             "errcheck": np.nan,
@@ -98,6 +100,8 @@ def analyze_findings(file):
         }
 
     for issue in issues:
+        print("Issue: ", issue)
+        print(issue)
         tool = issue["FromLinter"]
         if tool in tools.keys():
             tools[tool] += 1
@@ -105,6 +109,7 @@ def analyze_findings(file):
             print("Unknown: ", tool)
         tools["all"] += 1
     return tools
+
 
 def analyze_code_quality_go(paths):
     analysis = pd.DataFrame(
@@ -114,8 +119,9 @@ def analyze_code_quality_go(paths):
         df = pd.read_csv(filepath)
         llm = extract_llm_model(filepath)
         for i, row in df.iterrows():
-            path = row["file_path"]
-            if path is None or isinstance(path, float):
+            print(filepath)
+            warnings = row["warnings"]
+            if warnings is None or warnings == "" or pd.isna(warnings):
                 new_row = pd.DataFrame([{
                     "model": llm,
                     "errcheck": np.nan,
@@ -130,7 +136,8 @@ def analyze_code_quality_go(paths):
                 analysis = pd.concat([analysis, new_row], ignore_index=True)
                 continue
 
-            results = analyze_findings(path)
+            print(warnings)
+            results = golangci_analysis(eval(warnings))
             results["model"] = llm
             new_row = pd.DataFrame([results])
             analysis = pd.concat([analysis, new_row], ignore_index=True)
@@ -153,23 +160,11 @@ def analyze_code_quality_go(paths):
         data = data.apply(pd.to_numeric, errors="coerce").fillna(0)
 
         # Plot heatmap
-        plt.figure(figsize=(9, 5))
+        plt.figure(figsize=(9, 4))
         sns.heatmap(data, annot=True, fmt=".1f", cmap="YlOrBr", cbar=True)
         plt.title(f"Heatmap of {type} by LLM and Code Quality Metrics")
         plt.xlabel("Metrics")
         plt.ylabel("LLM")
         plt.tight_layout()
-        plt.savefig("./data/plots/go_code_quality_{}.png".format(type))
+        plt.savefig(os.path.join(Config.get_plots_dir(), "go_code_quality_{}.png".format(type)))
         plt.show()
-
-if __name__ == "__main__":
-    files = [
-        "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Go_stats_deepseek_coder.csv",
-        "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Go_stats_gemini_1_5_pro_002.csv",
-        "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_stats/filtered_Go_stats_gpt_4o_2024_08_06.csv"
-    ]
-
-
-
-
-    analyze_code_quality_go(files)

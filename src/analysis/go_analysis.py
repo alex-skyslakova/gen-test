@@ -8,10 +8,10 @@ from collections import Counter
 
 from src.analysis.go_assertion_ratios import assertions_density_go, assertions_mccabe_ratio_go
 from src.analysis.python_validation import CompileStatus
+from src.stats.go_code_quality import run_golangci
 
 
 def run_command(command, cwd=None):
-    """Run a system command using subprocess and return output."""
     try:
         result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
         return result.stdout.decode('utf-8'), result.stderr.decode('utf-8'), result.returncode
@@ -20,7 +20,6 @@ def run_command(command, cwd=None):
 
 
 def check_syntax(file):
-    """Check Go code syntax using go vet and analyze types of warnings."""
     try:
         # Run 'go build' to validate syntax (this does not produce a binary)
         print(os.getcwd())
@@ -42,7 +41,6 @@ def check_syntax(file):
 
 def check_for_warnings(project_dir, tests=True):
     try:
-
         vet_cmd = "go vet ./..."
 
         print("Running go vet...")
@@ -99,19 +97,16 @@ def check_for_warnings(project_dir, tests=True):
 
 
 def build_project(project_dir):
-    """Build the Go project."""
     build_cmd = "go build ./..."
 
     print("Building the project...")
     build_out, build_err, return_code = run_command(build_cmd, cwd=project_dir)
     print(build_out)
     print(build_err)
-    print(return_code)
     return return_code
 
 
 def run_tests(project_dir):
-    """Run Go tests and return summary with coverage."""
     test_cmd = ["go", "test", "-timeout", "30s", "-json", "-cover", "./..."]
     runtime_errors = 0
 
@@ -145,7 +140,6 @@ def run_tests(project_dir):
                     "runtime_errors_count": None
                 }
             else:
-                print("FAILUREEEEE")
                 runtime_error_pattern = re.compile(
                     r"(panic:|fatal error:|runtime error:)", re.IGNORECASE
                 )
@@ -156,7 +150,6 @@ def run_tests(project_dir):
                     for line in o.splitlines():
                         # Match lines with runtime errors but exclude assertions
                         if runtime_error_pattern.search(line) and not assertion_error_pattern.search(line):
-                            print("RUNTIME ERROR>>> ", line)
                             runtime_errors = runtime_errors + 1
 
         # Parse the JSON output
@@ -177,7 +170,6 @@ def run_tests(project_dir):
             # Check for test results
             if data.get('Action') == 'pass' and 'Test' in data:
                 passed_tests += 1
-                print('elapsed ', data.get('Elapsed', 0))
                 total_time += data.get('Elapsed', 0)
             elif data.get('Action') == 'fail' and 'Test' in data:
                 failed_tests += 1
@@ -190,7 +182,6 @@ def run_tests(project_dir):
             if data.get('Action') == 'output' and 'Output' in data:
                 output_line = data['Output'].strip()
                 if output_line.startswith("coverage:"):
-                    print("HEREEEEEEEE")
                     # Extract the coverage percentage
                     match = re.search(r'coverage: ([\d\.]+)%', output_line)
                     if match:
@@ -198,15 +189,11 @@ def run_tests(project_dir):
 
             # Alternative: Some versions include 'Coverage' field
             elif data.get('Action') == 'pass' and 'Coverage' in data:
-                print("THEREEEEEEEEEEEEE")
                 coverage = data['Coverage']
 
-        #compute_branch_coverage(project_dir)
         total_tests = passed_tests + failed_tests
         pass_percentage = round((passed_tests / total_tests) * 100, 2) if total_tests > 0 else 0
 
-        print("TOTAL TIME:", total_time)
-        print("SUMMARY TIME:", summary_time)
         v = {
             "test_pass_rate": pass_percentage,
             "execution_time_sec": summary_time if summary_time is not None else total_time,
@@ -216,7 +203,6 @@ def run_tests(project_dir):
             "internal_error_occurred": False,
             "runtime_errors_count": runtime_errors
         }
-        print(str(v))
         return v
     except Exception as e:
         print(f"Error running Go tests: {e}")
@@ -229,41 +215,21 @@ def run_tests(project_dir):
             "internal_error_occurred": True,
             "runtime_errors_count": runtime_errors
         }
-#
-#
-# if __name__ == "__main__":
-#     test = "test_name"
-#     # Define your Go project directory
-#     project_directory = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/15_puzzle_game"
-#
-#     # Check syntax
-#     print(check_syntax(project_directory))
-#
-#     # Build the project
-#     build_project(project_directory)
-#
-#     # Run tests
-#     run_tests(project_directory)
+
+
 def analyze_go_tests(go_file_path, test_file_path):
-    """Create a temporary folder, move the Go file and test file, and run tests."""
     # Create a temporary directory within "/data/generated/golang/"
-    print(os.getcwd())
     base_temp_dir = "./data/generated/docs_golang/"
     os.makedirs(base_temp_dir, exist_ok=True)
     temp_dir = tempfile.mkdtemp(dir=base_temp_dir)
-    print("temporary:", temp_dir)
 
     # Save the current working directory
     original_cwd = os.getcwd()
-    print("Current>", original_cwd)
 
     try:
         # Copy the Go file and the specified test file to the temporary directory
         new_go_file_path = shutil.copy(go_file_path, temp_dir)
-        print("New go file:", new_go_file_path)
         new_test_file_path = shutil.copy(test_file_path, temp_dir)
-        print("New test file:", new_test_file_path)
-
 
         # Change to temporary directory
         os.chdir(temp_dir)
@@ -271,14 +237,10 @@ def analyze_go_tests(go_file_path, test_file_path):
         # Check syntax
         syntax_build = check_syntax(os.path.basename(test_file_path))
         syntax_vet, warnings = check_for_warnings(temp_dir)
+        findings = run_golangci(os.path.basename(test_file_path))
         syntax = determine_syntax_result(syntax_build, syntax_vet)
         assertions_density = assertions_density_go(os.path.basename(test_file_path))
         mccabe = assertions_mccabe_ratio_go(os.path.basename(new_go_file_path), os.path.basename(new_test_file_path))
-        print("Syntax build: ", syntax_build)
-        print("Syntax vet: ", syntax_vet)
-        print("Final syntax: ", syntax)
-        print("Warnings: ", warnings)
-
 
         if syntax != CompileStatus.OK:
             print("Syntax check failed.")
@@ -288,8 +250,9 @@ def analyze_go_tests(go_file_path, test_file_path):
                 "execution_time_sec": None,
                 "line_coverage_percent": None,
                 "branch_coverage_percent": None,
-                "warnings": warnings,
-                "warnings_count": len(warnings) if warnings is not None else None,
+                "syntax_output": warnings,
+                "warnings": findings,
+                "warnings_count": len(findings) if findings is not None else None,
                 "timeout": False,
                 "internal_error_occurred": False,
                 "assertions_density": assertions_density,
@@ -301,9 +264,10 @@ def analyze_go_tests(go_file_path, test_file_path):
         test_results = run_tests(".")
 
         if test_results:
-            test_results["warnings"] = warnings
-            test_results["warnings_count"] = len(warnings) if warnings is not None else None
+            test_results["warnings"] = findings
+            test_results["warnings_count"] = len(findings) if findings is not None else None
             test_results["syntax"] = syntax
+            test_results["syntax_output"] = warnings
             test_results["assertions_density"] = assertions_density
             test_results["assertions_mccabe_ratio"] = mccabe
             print(f"Percentage of passed tests: {test_results['test_pass_rate']}")
@@ -317,13 +281,14 @@ def analyze_go_tests(go_file_path, test_file_path):
             print("Failed to execute Go tests.")
             return {
                 "syntax": syntax,
+                "syntax_output": warnings,
                 "test_pass_rate": None,
                 "execution_time_sec": None,
                 "timeout": False,
                 "line_coverage_percent": None,
                 "branch_coverage_percent": None,
-                "warnings": warnings,
-                "warnings_count": len(warnings) if warnings is not None else None,
+                "warnings": findings,
+                "warnings_count": len(findings) if findings is not None else None,
                 "internal_error_occurred": True,
                 "runtime_errors_count": None,
                 "assertions_density": assertions_density,
@@ -337,67 +302,10 @@ def analyze_go_tests(go_file_path, test_file_path):
         shutil.rmtree(temp_dir)
         print(f"Temporary directory {temp_dir} has been removed.")
 
+
 def determine_syntax_result(build, vet):
     if build == CompileStatus.SYNTAX_ERROR or build == CompileStatus.EXCEPTION_OCCURRED:
         return build
     if vet == CompileStatus.SYNTAX_ERROR or CompileStatus.EXCEPTION_OCCURRED:
         return vet
     return CompileStatus.OK
-
-#
-# def compute_branch_coverage(directory):
-#     os.environ["PATH"] += os.pathsep + "/usr/local/golang/bin"
-#     os.environ["PATH"] += os.pathsep + "/Users/alex/go/bin"
-#
-#
-#     # export PATH="/usr/local/golang/bin:$PATH"
-#     # export PATH =$(go env GOPATH) / bin:$PATH
-#     try:
-#         # Run `gocov test` command and capture the JSON output
-#         print("RUNNING GOBCO")
-#         result = subprocess.run(
-#             ["gobco", directory],
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             text=True,
-#             check=True
-#         )
-#
-#         # Parse the JSON output
-#         coverage_data = json.loads(result.stdout)
-#
-#         # Calculate branch coverage
-#         total_branches = 0
-#         covered_branches = 0
-#
-#         for pkg in coverage_data["packages"]:
-#             for func in pkg["functions"]:
-#                 total_branches += func.get("branches", 0)
-#                 covered_branches += func.get("covered_branches", 0)
-#
-#         branch_coverage = (
-#             (covered_branches / total_branches) * 100 if total_branches > 0 else 0
-#         )
-#
-#         return {
-#             "total_branches": total_branches,
-#             "covered_branches": covered_branches,
-#             "branch_coverage": branch_coverage,
-#         }
-#
-#     except subprocess.CalledProcessError as e:
-#         print(f"Error while running gocov test: {e.stderr}")
-#         return None
-#     except json.JSONDecodeError:
-#         print("Failed to parse gocov output.")
-#         return None
-
-
-if __name__ == "__main__":
-    pass
-    # Paths to your Go file and the specific test file
-    # go_file = "/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/abbreviations_automatic/abbreviations_automatic.go"
-    # test_file = "data/generated/golang/abbreviations_automatic/gemini_1_5_flash_002_abbreviations_automatic_test.go"
-
-    #build_project("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/golang/tmp1v_oax0s")
-    #check_for_warnings("/Users/alex/PycharmProjects/chatgptApi/llm-test-gen/data/generated/docs_golang/list_rooted_trees")
