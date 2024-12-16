@@ -180,7 +180,6 @@ def get_public_class_name(file_path):
         match = re.search(class_pattern, content)
         if match:
             g = match.group(1)
-            print(g)
             return g  # Return the class name if found
 
     return None

@@ -6,14 +6,7 @@ import glob
 
 from src.analysis.java_assertion_ratios import assertions_density_java, assertions_mccabe_ratio_java
 from src.analysis.python_validation import CompileStatus
-
-JAVA_SRC_DIR = 'data/javaSetup/src/main/java/org/example/package'
-JAVA_TEST_DIR = 'data/javaSetup/src/test/java/org/example/package'
-JAVA_PROJECT_ROOT = 'data/javaSetup'
-CHECKSTYLE_JAR_PATH = "./checkstyle-10.18.1-all.jar"
-CHECKSTYLE_CONFIG = "./checkstyle-config.xml"
-TEST_REPORTS = "data/javaSetup/target/surefire-reports/*.xml"
-
+from src.config import Config
 import subprocess
 
 
@@ -21,7 +14,7 @@ def run_checkstyle(java_file_path):
     """ Run Checkstyle for a Java file and return a list of errors """
     try:
         result = subprocess.run(
-            ['java', '-jar', CHECKSTYLE_JAR_PATH, '-c', CHECKSTYLE_CONFIG, java_file_path],
+            ['java', '-jar', Config._java_checkstyle_jar_path, '-c', Config._java_checkstyle_config, java_file_path],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
 
@@ -71,8 +64,6 @@ def run_maven_test_compile(project_dir, timeout):
 
     Returns a tuple: (syntax_maven_output, syntax, timeout_occurred, error)
     """
-    syntax_maven_output = None
-    syntax = None
     timeout_occurred = False
     error = False
 
@@ -88,10 +79,10 @@ def run_maven_test_compile(project_dir, timeout):
         print(result.stdout)
         print(result.stderr)
         if result.returncode == 0:
-            print("TEST COMPILE PASSED")
+            print("Test compilation passed")
             syntax = CompileStatus.OK
         else:
-            print("TEST COMPILE FAILED")
+            print("Test compilation failed")
             syntax = CompileStatus.SYNTAX_ERROR
     except subprocess.TimeoutExpired:
         timeout_occurred = True
@@ -188,9 +179,9 @@ def compute_coverage_percentage(project_dir, src_file_path, timeout_occurred):
 def process_java_files_and_run_test_analysis(
         input_dir,
         test_input_file_path,
-        src_dir=JAVA_SRC_DIR,
-        test_dir=JAVA_TEST_DIR,
-        project_dir=JAVA_PROJECT_ROOT,
+        src_dir=Config._java_src_dir,
+        test_dir=Config._java_test_dir,
+        project_dir=Config._java_project_root,
         timeout=30
 ):
     # Track copied files for cleanup later
@@ -249,7 +240,7 @@ def process_java_files_and_run_test_analysis(
         # Update the overall timeout and error status
         timeout_occurred = timeout_occurred or test_timeout_occurred
         error = error or test_error
-        pass_rate, runtime_errors = parse_report_and_compute_pass_rate(TEST_REPORTS)
+        pass_rate, runtime_errors = parse_report_and_compute_pass_rate(Config._java_test_reports)
         coverage_percentage = compute_coverage_percentage(project_dir, source_file_path, timeout_occurred)
 
         return {
@@ -272,8 +263,6 @@ def process_java_files_and_run_test_analysis(
 
 
 def parse_report_and_compute_pass_rate(test_reports):
-    # Directory containing the XML report files
-    print(os.getcwd())
     report_files = glob.glob(test_reports)
 
     total_tests = 0
