@@ -79,4 +79,10 @@ GenTest provides three actions that can be performed:
  docker cp my_container:/app/output ./my_output
 ```
 
+### When changing between operations, make sure to remove the container and image:
+```bash
+docker stop my_container  # container can be stopped already, but if not, stop it
+docker rm my_container
+docker rmi gen-test
+```
 
